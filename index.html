@@ -522,6 +522,7 @@ function authMsg(e){const m=String(e&&e.message||e||"");
   if(/rate limit|too many|security purposes/i.test(m))return"Too many attempts. Please wait a minute and try again.";
   if(/failed to fetch|networkerror|load failed/i.test(m))return"Can't reach the server. Check your internet connection and try again.";
   if(/expired|invalid.*(link|token)|otp/i.test(m))return"This link is invalid or has expired. Please request a new one.";
+  if(/unable to exchange external code/i.test(m))return"Google approved the sign-in, but this app's Google settings in Supabase don't match (usually the Client Secret). The owner needs to re-enter the Google Client ID and Client Secret in Supabase.";
   if(/provider is not enabled|unsupported provider/i.test(m))return"Google sign-in isn't switched on for this app yet. Please use your email and password for now.";
   if(/^access_denied$|access denied|cancel/i.test(m))return"Google sign-in was cancelled. You can try again, or use your email and password.";
   if(/email address not authorized|not authorized/i.test(m))return"The email couldn't be sent: this app's email service only delivers to Supabase team members until custom email (SMTP) is set up. Ask the showroom owner to finish the email setup.";
@@ -678,7 +679,8 @@ async function start(){
   if(recovering){showAuth("reset");return;}
   let viaGoogle=false;try{viaGoogle=sessionStorage.getItem("bsm_oauth")==="google";sessionStorage.removeItem("bsm_oauth");}catch(e){}
   if(linkErr&&!session){try{history.replaceState(null,"",location.pathname);}catch(e){}
-    const desc=linkErr.replace(/\+/g," "),code=params.get("error")||"";
+    let desc=linkErr.replace(/\+/g," ");try{desc=decodeURIComponent(desc);}catch(e){}
+    const code=params.get("error")||"";
     let msg=authMsg(desc);
     if(viaGoogle)msg=(code==="access_denied"&&!/expired|invalid/i.test(desc))?authMsg("access_denied"):"Google sign-in didn't complete: "+authMsg(desc);
     showAuth("signin",msg);return;}
