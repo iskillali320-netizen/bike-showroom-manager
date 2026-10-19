@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Bike Showroom Manager</title>
+<meta name="description" content="Stock, invoices, payments, instalments and FBR sales tax records for motorcycle showrooms.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}[hidden]{display:none!important}
+/* Layout: top bar + tab rail, one working panel per tab; ledger-style tables with mono figures */
+:root{
+  --bg:#f4f5f3; --surface:#ffffff; --sunk:#eceeea; --line:#d9ddd6; --fg:#1b211e; --muted:#5d6762;
+  --accent:#0d6a55; --accent-ink:#ffffff; --accent-soft:#dcefe8;
+  --ok:#1f7a3a; --ok-soft:#e1f2e5; --warn:#9a5b00; --warn-soft:#fbeed3; --bad:#b3261e; --bad-soft:#f9e1de;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121614; --surface:#1a201d; --sunk:#222924; --line:#323b36; --fg:#e7ece9; --muted:#9aa6a0;
+  --accent:#4cc3a2; --accent-ink:#0b1d17; --accent-soft:#183a31;
+  --ok:#6fd08b; --ok-soft:#1b3323; --warn:#f0b65a; --warn-soft:#3a2d14; --bad:#ff8a80; --bad-soft:#3d1d1a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121614; --surface:#1a201d; --sunk:#222924; --line:#323b36; --fg:#e7ece9; --muted:#9aa6a0;
+  --accent:#4cc3a2; --accent-ink:#0b1d17; --accent-soft:#183a31;
+  --ok:#6fd08b; --ok-soft:#1b3323; --warn:#f0b65a; --warn-soft:#3a2d14; --bad:#ff8a80; --bad-soft:#3d1d1a; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.45}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px 16px;margin-bottom:12px}
+h1{font-family:var(--display);font-weight:800;font-size:22px;letter-spacing:-.01em;margin:0;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:16px;scrollbar-width:thin}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;font:600 13px var(--body);color:var(--muted);cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h2{font-family:var(--display);font-weight:700;font-size:17px;margin:0}
+h3{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0}
+.stack{display:flex;flex-direction:column;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-end}
+.between{justify-content:space-between;align-items:center}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.kpi{background:var(--surface);padding:12px 14px;display:flex;flex-direction:column;gap:2px}
+.kpi .v{font-family:var(--mono);font-size:20px;font-weight:500;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted)}
+.kpi.alert .v{color:var(--bad)}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--muted);font-weight:500;min-width:0}
+label.f.grow{flex:1 1 200px}
+input,select,textarea{font:14px var(--body);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:8px 10px;min-width:0;width:100%}
+textarea{font-family:var(--mono);font-size:13px;min-height:96px;resize:vertical}
+input[type=number]{font-family:var(--mono)}
+.btn{font:600 13px var(--body);border-radius:6px;padding:9px 14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer;white-space:nowrap}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.sm{padding:5px 9px;font-size:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tablebox{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th{text-align:left;font-weight:600;font-size:12px;color:var(--muted);background:var(--sunk);padding:8px 10px;white-space:nowrap;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+tbody tr.click{cursor:pointer}
+tbody tr.click:hover td{background:var(--sunk)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.mono{font-family:var(--mono);font-size:12.5px}
+tfoot td{font-weight:600;background:var(--sunk)}
+.pill{display:inline-block;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)}
+.pill.warn{background:var(--warn-soft);color:var(--warn)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.neutral{background:var(--sunk);color:var(--muted)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.empty{padding:24px;text-align:center;color:var(--muted)}
+.note{font-size:12.5px;color:var(--muted);max-width:70ch}
+.banner{padding:10px 14px;border-radius:8px;background:var(--warn-soft);color:var(--warn);font-weight:500}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:6px;padding:6px 10px;font-size:12.5px}
+.chip b{font-family:var(--mono)}
+.picklist{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.pick{display:grid;grid-template-columns:auto 1fr 140px;gap:10px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line)}
+.pick:last-child{border-bottom:0}
+.pick input[type=checkbox]{width:auto}
+.totals{display:grid;grid-template-columns:1fr auto;gap:4px 24px;max-width:360px;margin-left:auto;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.totals .t{font-weight:600;border-top:1px solid var(--line);padding-top:4px}
+.modal-bg{position:fixed;inset:0;background:rgba(10,14,12,.55);display:flex;align-items:flex-start;justify-content:center;padding:max(24px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 24px max(12px,env(safe-area-inset-left,0px));overflow:auto;z-index:50}
+.modal{background:var(--surface);border-radius:10px;border:1px solid var(--line);width:min(860px,100%);padding:20px;display:flex;flex-direction:column;gap:14px}
+.inv-head{display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px}
+.inv-head .big{font-family:var(--display);font-size:20px;font-weight:800}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-weight:500;z-index:60;max-width:calc(100% - 32px)}
+.confirm{display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap}
+@media (max-width:520px){.pick{grid-template-columns:auto 1fr}.pick input[type=number]{grid-column:2}}
+.authwrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding-block:24px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.authcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:24px;width:min(400px,100%);display:flex;flex-direction:column;gap:14px}
+.brand{font-family:var(--display);font-weight:800;font-size:20px}
+.linkbtn{background:none;border:0;color:var(--accent);font:500 13px var(--body);cursor:pointer;padding:4px 0;text-align:left}
+#shopSwitch{width:auto}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<section id="auth" class="authwrap"><div class="authcard"><div class="brand">Bike Showroom Manager</div><p class="sub">Loading…</p></div></section>
+<div class="wrap" id="app" hidden>
+  <header class="top">
+    <div>
+      <h1 id="bizName">Bike Showroom Manager</h1>
+      <div class="sub" id="bizSub">Stock from factory · dealers & customers · invoices · payments · FBR</div>
+    </div>
+    <div class="row" style="align-items:center"><select id="shopSwitch" hidden aria-label="Showroom"></select><span class="sub" id="syncState">Connecting…</span><button class="btn sm" data-act="signout">Sign out</button></div>
+  </header>
+  <div id="banner" class="banner" hidden></div>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <main id="view"></main>
+</div>
+<div id="modalRoot"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+(function(){
+const TABS=[["overview","Overview"],["stock","Stock"],["sales","Sales & Invoices"],["payments","Payments"],["parties","Dealers & Customers"],["instal","Instalments"],["fbr","FBR / Tax"],["settings","Settings"]];
+const S={bikes:[],parties:[],invoices:[],payments:[],settings:{}};
+let tab="overview", ready=false, ui={stockFilter:"in_stock",stockQ:"",fbrMonth:today().slice(0,7),partyFilter:"all"};
+try{const t=localStorage.getItem("bsm_tab");if(t&&TABS.some(x=>x[0]===t))tab=t;}catch(e){}
+
+/* ---------- helpers ---------- */
+function today(){const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const num=v=>{const n=parseFloat(String(v).replace(/,/g,""));return isFinite(n)?n:0;};
+const r2=n=>Math.round(n*100)/100;
+const rs=n=>"Rs "+Number(r2(n)).toLocaleString("en-PK",{maximumFractionDigits:2});
+const fmtN=n=>Number(r2(n)).toLocaleString("en-PK",{maximumFractionDigits:2});
+const fmtD=d=>{if(!d)return"";const [y,m,dd]=d.split("-");return dd+"-"+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][+m-1]+"-"+y;};
+function addMonths(d,k){const [y,m,dd]=d.split("-").map(Number);const t=new Date(y,m-1+k,1);const last=new Date(t.getFullYear(),t.getMonth()+1,0).getDate();return t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(Math.min(dd,last)).padStart(2,"0");}
+const $=s=>document.querySelector(s);
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast._t);toast._t=setTimeout(()=>t.hidden=true,2600);}
+const party=id=>S.parties.find(p=>p.id===id);
+const bike=id=>S.bikes.find(b=>b.id===id);
+const sum=(a,f)=>a.reduce((s,x)=>s+num(f(x)),0);
+function paidFor(inv){return sum(S.payments.filter(p=>p.invoiceId===inv.id),p=>p.amount);}
+function invBal(inv){return r2(num(inv.total)-paidFor(inv));}
+function partyStats(pid){const inv=S.invoices.filter(i=>i.partyId===pid);const billed=sum(inv,i=>i.total);const paid=sum(S.payments.filter(p=>p.partyId===pid),p=>p.amount);return{inv,billed,paid,bal:r2(billed-paid),bikes:sum(inv,i=>(i.items||[]).length)};}
+function settings(){return Object.assign({name:"",address:"",phone:"",ntn:"",strn:"",taxRate:18,prefix:"INV-"},S.settings);}
+function nextInvNo(){const st=settings();let max=0;S.invoices.forEach(i=>{const m=String(i.no||"").match(/(\d+)\s*$/);if(m)max=Math.max(max,+m[1]);});return st.prefix+String(max+1).padStart(4,"0");}
+function csv(rows){return rows.map(r=>r.map(c=>{c=String(c??"");return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c;}).join(",")).join("\r\n");}
+async function save(filename,data){
+  if(!dl){toast("Downloads aren't available in this view");return;}
+  try{await dl.save({filename,data});}catch(e){if(e&&e.code==="declined")return;toast("Couldn't save file: "+(e&&e.message||"unavailable"));}
+}
+function schedule(inv){
+  if(inv.plan!=="instalment")return null;
+  const total=num(inv.total),down=num(inv.down),months=Math.max(1,num(inv.months)|0);
+  const fin=r2(total-down),each=r2(fin/months);
+  let paid=paidFor(inv)-down; const rows=[]; const t=today();
+  for(let i=0;i<months;i++){
+    const amt=i===months-1?r2(fin-each*(months-1)):each;
+    const due=addMonths(inv.startDate||inv.date,i);
+    const got=Math.max(0,Math.min(amt,paid));paid-=got;
+    const status=got>=amt-0.01?"paid":(due<t?"overdue":(got>0?"part":"due"));
+    rows.push({n:i+1,due,amt,got:r2(got),status});
+  }
+  return {down,each,fin,rows,downPaid:paidFor(inv)>=down-0.01};
+}
+async function guard(fn){
+  if(!sb||!shop){toast("Please sign in first");return false;}
+  try{await fn();await loadAll();return true;}catch(e){console.error(e);
+    const m=String(e&&(e.message||e.details)||"try again");
+    toast(/row-level security|permission/i.test(m)?"Only the owner can do this.":/bikes_chassis_unique|duplicate key/i.test(m)?"That chassis number is already in stock.":/Failed to fetch|NetworkError/i.test(m)?"No internet connection. Try again.":"Couldn't save: "+m);
+    return false;}
+}
+/* ---------- data (Supabase) ---------- */
+let sb=null, me=null, shop=null, role="staff", shops=[], chan=null;
+S.members=[];S.invites=[];
+const isOwner=()=>role==="owner";
+const camel=s=>s.replace(/_([a-z])/g,(_,c)=>c.toUpperCase());
+const snake=s=>s.replace(/[A-Z]/g,c=>"_"+c.toLowerCase());
+const fromRow=r=>{const o={};for(const k in r)o[camel(k)]=r[k];return o;};
+const NULLABLE=new Set(["invoice_id","sold_to","sold_date","party_id","start_date","down","months","received_date","date"]);
+const toRow=o=>{const r={};for(const k in o){if(k==="id"||k==="createdAt")continue;const s=snake(k);let v=o[k];if(v===""&&NULLABLE.has(s))v=null;r[s]=v;}return r;};
+const q=async p=>{const {data,error}=await p;if(error)throw error;return data;};
+async function fetchAll(table){let out=[],from=0;for(;;){const data=await q(sb.from(table).select("*").eq("showroom_id",shop.id).order("created_at").range(from,from+999));out=out.concat(data);if(data.length<1000)break;from+=1000;}return out.map(fromRow);}
+let loading=null,again=false;
+async function loadAll(){
+  if(!shop)return;
+  if(loading){again=true;return loading;}
+  loading=(async()=>{try{
+    const [b,p,i,y]=await Promise.all(["bikes","parties","invoices","payments"].map(fetchAll));
+    S.bikes=b;S.parties=p;S.invoices=i;S.payments=y;
+    const row=await q(sb.from("showrooms").select("*").eq("id",shop.id).single());
+    shop=row;S.settings=fromRow(row);S.settings.taxRate=num(row.tax_rate);
+    S.members=(await q(sb.from("members").select("user_id,email,role").eq("showroom_id",shop.id))).map(fromRow);
+    S.invites=isOwner()?(await q(sb.from("invites").select("*").eq("showroom_id",shop.id))).map(fromRow):[];
+    ready=true;$("#syncState").textContent="Online · "+(me&&me.email||"")+" · "+(isOwner()?"Owner":"Staff");render();
+  }catch(e){console.error(e);$("#syncState").textContent="Couldn't load. Check your internet and reload.";}finally{loading=null;if(again){again=false;loadAll();}}})();
+  return loading;
+}
+let reloadT;const reloadSoon=()=>{clearTimeout(reloadT);reloadT=setTimeout(loadAll,400);};
+const dl={save:async({filename,data})=>{const blob=data instanceof Blob?data:new Blob([data]);const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);return{status:"saved"};}};
+
+/* ---------- sign in ---------- */
+let authMode="signin";
+function showAuth(mode,msg){
+  authMode=mode;$("#app").hidden=true;const a=$("#auth");a.hidden=false;
+  const f={
+    signin:`<h2>Sign in</h2><label class="f"><span>Email</span><input id="auEmail" type="email" autocomplete="email"></label><label class="f"><span>Password</span><input id="auPass" type="password" autocomplete="current-password"></label><button class="btn primary" data-auth="signin">Sign in</button><div class="row between"><button class="linkbtn" data-auth-go="signup">Create an account</button><button class="linkbtn" data-auth-go="forgot">Forgot password?</button></div>`,
+    signup:`<h2>Create account</h2><label class="f"><span>Email</span><input id="auEmail" type="email" autocomplete="email"></label><label class="f"><span>Password (at least 8 characters)</span><input id="auPass" type="password" autocomplete="new-password"></label><button class="btn primary" data-auth="signup">Create account</button><button class="linkbtn" data-auth-go="signin">I already have an account</button>`,
+    forgot:`<h2>Reset password</h2><label class="f"><span>Email</span><input id="auEmail" type="email" autocomplete="email"></label><button class="btn primary" data-auth="forgot">Send reset link</button><button class="linkbtn" data-auth-go="signin">Back to sign in</button>`,
+    reset:`<h2>Set a new password</h2><label class="f"><span>New password</span><input id="auPass" type="password" autocomplete="new-password"></label><button class="btn primary" data-auth="reset">Save password</button>`,
+    create:`<h2>Set up your showroom</h2><p class="note">You're signed in as ${esc(me&&me.email)}. Enter your showroom's name to start. If your owner invited you as staff, ask them to invite this exact email, then sign in again.</p><label class="f"><span>Showroom name</span><input id="auShop"></label><button class="btn primary" data-auth="create">Create showroom</button><button class="linkbtn" data-auth="signout">Sign out</button>`,
+    setup:`<h2>Almost ready</h2><p class="note">This copy isn't connected to its database yet. Put your Supabase Project URL and anon key in <b>config.js</b> (see README).</p>`
+  }[mode];
+  a.innerHTML=`<div class="authcard stack"><div><div class="brand">Bike Showroom Manager</div><div class="sub">Stock · invoices · payments · FBR</div></div>${msg?`<p class="banner">${esc(msg)}</p>`:""}${f}</div>`;
+  const first=a.querySelector("input");if(first)first.focus();
+}
+const AUTH={
+  async signin(){const {error}=await sb.auth.signInWithPassword({email:$("#auEmail").value.trim(),password:$("#auPass").value});if(error){showAuth("signin",error.message==="Invalid login credentials"?"Wrong email or password.":error.message);return;}const {data:{user}}=await sb.auth.getUser();await afterLogin(user);},
+  async signup(){const email=$("#auEmail").value.trim(),pw=$("#auPass").value;if(pw.length<8){toast("Password must be at least 8 characters");return;}
+    const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});if(error){showAuth("signup",error.message);return;}
+    if(data.session){await afterLogin(data.user);}else showAuth("signin","Account created. Open the confirmation email we sent to "+email+", then sign in.");},
+  async forgot(){const email=$("#auEmail").value.trim();const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});showAuth("signin",error?error.message:"If "+email+" has an account, a reset link is on its way.");},
+  async reset(){const pw=$("#auPass").value;if(pw.length<8){toast("Password must be at least 8 characters");return;}const {error}=await sb.auth.updateUser({password:pw});if(error){showAuth("reset",error.message);return;}const {data:{user}}=await sb.auth.getUser();toast("Password changed");await afterLogin(user);},
+  async create(){const name=$("#auShop").value.trim();if(!name){toast("Enter the showroom name");return;}try{await q(sb.rpc("create_showroom",{p_name:name}));await afterLogin(me);}catch(e){showAuth("create",e.message);}},
+  async signout(){if(chan){sb.removeChannel(chan);chan=null;}await sb.auth.signOut();me=null;shop=null;ready=false;showAuth("signin");}
+};
+async function afterLogin(user){
+  me=user;try{await sb.rpc("accept_invites");}catch(e){}
+  let rows;try{rows=await q(sb.from("members").select("role,showroom_id,showrooms(*)").eq("user_id",user.id));}catch(e){showAuth("signin",e.message);return;}
+  shops=rows.filter(r=>r.showrooms);if(!shops.length){showAuth("create");return;}
+  let pick=null;try{pick=localStorage.getItem("bsm_shop");}catch(e){}
+  await openShop(shops.find(s=>s.showroom_id===pick)||shops[0]);
+}
+async function openShop(m){
+  shop=m.showrooms;role=m.role;ready=false;try{localStorage.setItem("bsm_shop",shop.id);}catch(e){}
+  $("#auth").hidden=true;$("#app").hidden=false;
+  const sw=$("#shopSwitch");sw.hidden=shops.length<2;sw.innerHTML=shops.map(s=>`<option value="${s.showroom_id}" ${s.showroom_id===shop.id?"selected":""}>${esc(s.showrooms.name)}</option>`).join("");
+  renderTabs();render();await loadAll();
+  if(chan)sb.removeChannel(chan);
+  chan=sb.channel("shop-"+shop.id);
+  ["bikes","parties","invoices","payments","showrooms"].forEach(t=>chan.on("postgres_changes",{event:"*",schema:"public",table:t,filter:(t==="showrooms"?"id=eq.":"showroom_id=eq.")+shop.id},reloadSoon));
+  chan.subscribe();
+}
+async function start(){
+  const C=window.APP_CONFIG||{};
+  if(!window.supabase||!C.supabaseUrl||/YOUR_/.test(C.supabaseUrl+C.supabaseAnonKey)){showAuth("setup");return;}
+  sb=window.supabase.createClient(C.supabaseUrl,C.supabaseAnonKey);
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="PASSWORD_RECOVERY")setTimeout(()=>showAuth("reset"),0);});
+  const {data:{session}}=await sb.auth.getSession();
+  if(location.hash.includes("type=recovery"))return;
+  if(session)await afterLogin(session.user);else showAuth("signin");
+}
+
+/* ---------- render ---------- */
+function renderTabs(){
+  $("#tabs").innerHTML=TABS.map(([k,l])=>`<button role="tab" data-tab="${k}" aria-selected="${k===tab}">${l}</button>`).join("");
+}
+function render(){
+  const st=settings();
+  $("#bizName").textContent=st.name||"Bike Showroom Manager";
+  $("#bizSub").textContent=st.name?[st.address,st.ntn&&("NTN "+st.ntn),st.strn&&("STRN "+st.strn)].filter(Boolean).join(" · ")||"Stock · invoices · payments · FBR":"Stock from factory · dealers & customers · invoices · payments · FBR";
+  const keep=captureForm();
+  const v=$("#view");
+  if(!ready){v.innerHTML=`<div class="panel empty">Loading your records…</div>`;return;}
+  v.innerHTML=({overview:vOverview,stock:vStock,sales:vSales,payments:vPayments,parties:vParties,instal:vInstal,fbr:vFbr,settings:vSettings}[tab])();
+  restoreForm(keep);
+  if(tab==="sales")updateInvTotals();
+  if(tab==="payments")fillPayInvoices();
+}
+/* keep half-typed form values across live re-renders */
+function captureForm(){const o={};document.querySelectorAll("#view [id]").forEach(el=>{if(el.matches("input,select,textarea")){o[el.id]=el.type==="checkbox"?el.checked:el.value;}});o.__focus=document.activeElement&&document.activeElement.id;return o;}
+function restoreForm(o){for(const k in o){if(k==="__focus")continue;const el=document.getElementById(k);if(!el||el.dataset.fresh)continue;if(el.type==="checkbox")el.checked=o[k];else if(el.tagName==="SELECT"){if([...el.options].some(op=>op.value===o[k]))el.value=o[k];}else el.value=o[k];}
+  if(o.__focus){const f=document.getElementById(o.__focus);if(f)f.focus();}}
+
+function statusPill(inv){const b=invBal(inv);if(b<=0.01)return`<span class="pill ok">Paid</span>`;
+  if(inv.plan==="instalment"){const sc=schedule(inv);if(sc.rows.some(r=>r.status==="overdue"))return`<span class="pill bad">Overdue</span>`;return`<span class="pill warn">Instalments</span>`;}
+  return paidFor(inv)>0?`<span class="pill warn">Part paid</span>`:`<span class="pill bad">Unpaid</span>`;}
+
+function vOverview(){
+  const total=S.bikes.length,inStock=S.bikes.filter(b=>b.status!=="sold").length;
+  const soldD=sum(S.invoices.filter(i=>i.partyType==="dealer"),i=>(i.items||[]).length);
+  const soldC=sum(S.invoices.filter(i=>i.partyType!=="dealer"),i=>(i.items||[]).length);
+  const sales=sum(S.invoices,i=>i.total),recv=sum(S.payments,p=>p.amount),pend=r2(sales-recv);
+  const m=today().slice(0,7);const mInv=S.invoices.filter(i=>(i.date||"").startsWith(m));
+  const overdue=[];S.invoices.forEach(i=>{const sc=schedule(i);if(sc)sc.rows.filter(r=>r.status==="overdue").forEach(r=>overdue.push({i,r}));});
+  const owing=S.parties.map(p=>Object.assign({p},partyStats(p.id))).filter(x=>x.bal>0.01).sort((a,b)=>b.bal-a.bal);
+  const byModel={};S.bikes.filter(b=>b.status!=="sold").forEach(b=>{const k=b.model||"—";byModel[k]=(byModel[k]||0)+1;});
+  const recent=[...S.invoices].sort((a,b)=>(b.date+b.no).localeCompare(a.date+a.no)).slice(0,6);
+  return `<div class="stack">
+  <div class="kpis">
+    <div class="kpi"><span class="v">${total}</span><span class="l">Bikes received from factory</span></div>
+    <div class="kpi"><span class="v">${inStock}</span><span class="l">In stock now</span></div>
+    <div class="kpi"><span class="v">${soldD}</span><span class="l">Given to dealers</span></div>
+    <div class="kpi"><span class="v">${soldC}</span><span class="l">Sold to customers</span></div>
+    <div class="kpi"><span class="v">${fmtN(sales)}</span><span class="l">Total sales (Rs)</span></div>
+    <div class="kpi"><span class="v">${fmtN(recv)}</span><span class="l">Money received (Rs)</span></div>
+    <div class="kpi ${pend>0?"alert":""}"><span class="v">${fmtN(pend)}</span><span class="l">Money pending (Rs)</span></div>
+    <div class="kpi ${overdue.length?"alert":""}"><span class="v">${overdue.length}</span><span class="l">Overdue instalments</span></div>
+  </div>
+  <div class="grid2">
+    <section class="panel stack"><div class="row between"><h2>Who owes money</h2><span class="sub">${owing.length} parties</span></div>
+      ${owing.length?`<div class="tablebox"><table><thead><tr><th>Name</th><th>Type</th><th class="n">Bikes</th><th class="n">Pending</th></tr></thead><tbody>
+      ${owing.slice(0,10).map(x=>`<tr class="click" data-party="${x.p.id}"><td>${esc(x.p.name)}</td><td>${typePill(x.p.type)}</td><td class="n">${x.bikes}</td><td class="n">${fmtN(x.bal)}</td></tr>`).join("")}
+      </tbody></table></div>`:`<div class="empty">No pending money. Balances appear here after you make invoices.</div>`}
+    </section>
+    <section class="panel stack"><div class="row between"><h2>Stock by model</h2><span class="sub">${inStock} bikes</span></div>
+      ${Object.keys(byModel).length?`<div class="chips">${Object.entries(byModel).sort().map(([k,v])=>`<span class="chip">${esc(k)} <b>${v}</b></span>`).join("")}</div>`:`<div class="empty">No bikes in stock. Go to <b>Stock</b> to add bikes received from the factory.</div>`}
+      <h3>This month (${esc(fmtD(m+"-01").slice(3))})</h3>
+      <div class="chips"><span class="chip">Invoices <b>${mInv.length}</b></span><span class="chip">Bikes sold <b>${sum(mInv,i=>(i.items||[]).length)}</b></span><span class="chip">Sales <b>${fmtN(sum(mInv,i=>i.total))}</b></span><span class="chip">Sales tax <b>${fmtN(sum(mInv,i=>num(i.tax)+num(i.furtherTax)))}</b></span></div>
+    </section>
+  </div>
+  <section class="panel stack"><div class="row between"><h2>Recent invoices</h2><button class="btn primary" data-go="sales">New invoice</button></div>
+    ${recent.length?invTable(recent):`<div class="empty">No invoices yet. Add stock first, then create an invoice under <b>Sales & Invoices</b>.</div>`}
+  </section></div>`;
+}
+const typePill=t=>t==="dealer"?`<span class="pill acc">Dealer</span>`:`<span class="pill neutral">Customer</span>`;
+function invTable(list){
+  return `<div class="tablebox"><table><thead><tr><th>Invoice</th><th>Date</th><th>Party</th><th class="n">Bikes</th><th class="n">Total</th><th class="n">Received</th><th class="n">Balance</th><th>Status</th><th>FBR no.</th></tr></thead><tbody>
+  ${list.map(i=>`<tr class="click" data-inv="${i.id}"><td class="mono">${esc(i.no)}</td><td>${fmtD(i.date)}</td><td>${esc(i.partyName)}</td><td class="n">${(i.items||[]).length}</td><td class="n">${fmtN(i.total)}</td><td class="n">${fmtN(paidFor(i))}</td><td class="n">${fmtN(invBal(i))}</td><td>${statusPill(i)}</td><td class="mono">${i.fbrNo?esc(i.fbrNo):`<span class="pill warn">Missing</span>`}</td></tr>`).join("")}
+  </tbody></table></div>`;
+}
+
+function vStock(){
+  const q=ui.stockQ.toLowerCase();
+  let list=S.bikes.filter(b=>ui.stockFilter==="all"||(ui.stockFilter==="sold"?b.status==="sold":b.status!=="sold"));
+  if(q)list=list.filter(b=>[b.model,b.colour,b.engine,b.chassis,b.challan].join(" ").toLowerCase().includes(q));
+  list.sort((a,b)=>(b.receivedDate||"").localeCompare(a.receivedDate||"")||(a.model||"").localeCompare(b.model||""));
+  const models=[...new Set(S.bikes.map(b=>b.model).filter(Boolean))];
+  return `<div class="stack">
+  <section class="panel stack"><h2>Receive bikes from factory</h2>
+    <p class="note">Enter one bike per line as <b>engine number, chassis number</b>. Every line becomes one bike in stock with the model, colour and price below.</p>
+    <div class="row">
+      <label class="f"><span>Date received</span><input type="date" id="rcvDate" value="${today()}"></label>
+      <label class="f grow"><span>Model</span><input id="rcvModel" list="modelList" placeholder="e.g. CD 70 (2026)"><datalist id="modelList">${models.map(m=>`<option value="${esc(m)}">`).join("")}</datalist></label>
+      <label class="f"><span>Colour</span><input id="rcvColour" placeholder="Red"></label>
+      <label class="f"><span>Purchase price per bike (Rs)</span><input id="rcvPrice" type="number" min="0" step="1"></label>
+      <label class="f"><span>Factory invoice / challan no.</span><input id="rcvChallan"></label>
+    </div>
+    <label class="f"><span>Engine no., Chassis no. (one bike per line)</span><textarea id="rcvLines" placeholder="EN123456, CH987654&#10;EN123457, CH987655"></textarea></label>
+    <div class="row"><button class="btn primary" data-act="receive">Add to stock</button><span class="sub" id="rcvCount"></span></div>
+  </section>
+  <section class="stack">
+    <div class="row between"><div class="row">
+      <label class="f"><span>Show</span><select id="stockFilter" data-fresh="1">${[["in_stock","In stock"],["sold","Sold"],["all","All bikes"]].map(([k,l])=>`<option value="${k}" ${ui.stockFilter===k?"selected":""}>${l}</option>`).join("")}</select></label>
+      <label class="f"><span>Search</span><input id="stockQ" data-fresh="1" value="${esc(ui.stockQ)}" placeholder="Model, engine, chassis…"></label></div>
+      <button class="btn" data-act="stockCsv">Download stock (CSV)</button></div>
+    ${list.length?`<div class="tablebox"><table><thead><tr><th>Received</th><th>Model</th><th>Colour</th><th>Engine no.</th><th>Chassis no.</th><th>Challan</th><th class="n">Cost</th><th>Status</th><th></th></tr></thead><tbody>
+    ${list.map(b=>{const inv=b.invoiceId&&S.invoices.find(i=>i.id===b.invoiceId);return `<tr><td>${fmtD(b.receivedDate)}</td><td>${esc(b.model)}</td><td>${esc(b.colour)}</td><td class="mono">${esc(b.engine)}</td><td class="mono">${esc(b.chassis)}</td><td class="mono">${esc(b.challan)}</td><td class="n">${fmtN(b.cost)}</td>
+      <td>${b.status==="sold"?`<span class="pill neutral">Sold${inv?" · "+esc(inv.partyName):""}</span>`:`<span class="pill ok">In stock</span>`}</td>
+      <td>${b.status==="sold"?(inv?`<button class="btn sm" data-inv="${inv.id}">Invoice</button>`:""):`<span class="confirm" data-del-wrap="${b.id}"><button class="btn sm" data-act="askDelBike" data-id="${b.id}">Remove</button></span>`}</td></tr>`;}).join("")}
+    </tbody><tfoot><tr><td colspan="6">${list.length} bikes</td><td class="n">${fmtN(sum(list,b=>b.cost))}</td><td colspan="2"></td></tr></tfoot></table></div>`
+    :`<div class="panel empty">${S.bikes.length?"No bikes match this filter.":"No bikes yet. Use the form above to add the bikes you received from the factory."}</div>`}
+  </section></div>`;
+}
+
+function vSales(){
+  const st=settings();
+  const avail=S.bikes.filter(b=>b.status!=="sold").sort((a,b)=>(a.model||"").localeCompare(b.model||"")||(a.engine||"").localeCompare(b.engine||""));
+  const parties=[...S.parties].sort((a,b)=>a.name.localeCompare(b.name));
+  const list=[...S.invoices].sort((a,b)=>(b.date+b.no).localeCompare(a.date+a.no));
+  return `<div class="stack">
+  <section class="panel stack"><div class="row between"><h2>New invoice</h2><span class="mono">${esc(nextInvNo())}</span></div>
+    ${!parties.length?`<p class="banner">Add a dealer or customer first under <b>Dealers & Customers</b>.</p>`:""}
+    <div class="row">
+      <label class="f grow"><span>Sold to</span><select id="invParty"><option value="">Choose dealer or customer…</option>${parties.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.type==="dealer"?"Dealer":"Customer"})</option>`).join("")}</select></label>
+      <label class="f"><span>Invoice date</span><input type="date" id="invDate" value="${today()}"></label>
+      <label class="f"><span>FBR invoice no. (if issued)</span><input id="invFbr" placeholder="From FBR system"></label>
+    </div>
+    <h3>Bikes on this invoice</h3>
+    ${avail.length?`<div class="picklist">${avail.map(b=>`<label class="pick"><input type="checkbox" id="pk_${b.id}" data-pick="${b.id}"><span><b>${esc(b.model)}</b> ${esc(b.colour)}<br><span class="mono">E ${esc(b.engine)} · C ${esc(b.chassis)}</span></span><input type="number" id="pp_${b.id}" data-price="${b.id}" min="0" step="1" placeholder="Sale price"></label>`).join("")}</div>`:`<div class="empty">No bikes in stock to sell.</div>`}
+    <div class="row">
+      <label class="f"><span>Sales tax %</span><input type="number" id="invTax" value="${esc(st.taxRate)}" step="0.01" min="0"></label>
+      <label class="f"><span>Further tax % (unregistered buyer)</span><input type="number" id="invFurther" value="0" step="0.01" min="0"></label>
+      <label class="f"><span>Prices entered are</span><select id="invIncl"><option value="excl">Before tax</option><option value="incl">Including tax</option></select></label>
+      <label class="f"><span>Payment</span><select id="invPlan"><option value="full">Full / credit</option><option value="instalment">Instalments</option></select></label>
+    </div>
+    <div class="row" id="planBox" hidden>
+      <label class="f"><span>Down payment (Rs)</span><input type="number" id="invDown" min="0" step="1"></label>
+      <label class="f"><span>Number of months</span><input type="number" id="invMonths" min="1" step="1" value="12"></label>
+      <label class="f"><span>First instalment date</span><input type="date" id="invStart" value="${addMonths(today(),1)}"></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>Money received now (Rs)</span><input type="number" id="invRecv" min="0" step="1" placeholder="0"></label>
+      <label class="f"><span>Method</span><select id="invMethod">${["Cash","Bank transfer","Cheque","Online"].map(m=>`<option>${m}</option>`).join("")}</select></label>
+      <label class="f grow"><span>Notes</span><input id="invNotes"></label>
+    </div>
+    <div class="totals" id="invTotals"></div>
+    <div class="row"><button class="btn primary" data-act="saveInv" ${!parties.length||!avail.length?"disabled":""}>Save invoice</button></div>
+  </section>
+  <section class="stack"><h2>All invoices</h2>${list.length?invTable(list):`<div class="panel empty">No invoices yet.</div>`}</section></div>`;
+}
+function readInvForm(){
+  const tax=num($("#invTax")?.value),fur=num($("#invFurther")?.value),incl=$("#invIncl")?.value==="incl";
+  const items=[];document.querySelectorAll("[data-pick]").forEach(c=>{if(c.checked){const b=bike(c.dataset.pick);if(b)items.push({bikeId:b.id,model:b.model||"",colour:b.colour||"",engine:b.engine||"",chassis:b.chassis||"",entered:num(document.getElementById("pp_"+b.id).value)});}});
+  const rate=(tax+fur)/100;
+  items.forEach(it=>{it.price=r2(incl?it.entered/(1+rate):it.entered);});
+  const subtotal=r2(sum(items,i=>i.price)),t=r2(subtotal*tax/100),f=r2(subtotal*fur/100);
+  let total=r2(subtotal+t+f); if(incl){const want=r2(sum(items,i=>i.entered));if(Math.abs(want-total)<1)total=want;}
+  items.forEach(i=>delete i.entered);
+  return {items,subtotal,taxRate:tax,tax:t,furtherRate:fur,furtherTax:f,total};
+}
+function updateInvTotals(){
+  const box=$("#invTotals");if(!box)return;const x=readInvForm();
+  const plan=$("#invPlan").value;$("#planBox").hidden=plan!=="instalment";
+  let extra="";if(plan==="instalment"){const fin=x.total-num($("#invDown").value),m=Math.max(1,num($("#invMonths").value)|0);extra=`<span>Monthly instalment × ${m}</span><span>${fmtN(fin/m)}</span>`;}
+  box.innerHTML=`<span>Bikes</span><span>${x.items.length}</span><span>Value before tax</span><span>${fmtN(x.subtotal)}</span><span>Sales tax ${x.taxRate}%</span><span>${fmtN(x.tax)}</span>${x.furtherRate?`<span>Further tax ${x.furtherRate}%</span><span>${fmtN(x.furtherTax)}</span>`:""}<span class="t">Invoice total</span><span class="t">${fmtN(x.total)}</span>${extra}`;
+}
+
+function vPayments(){
+  const parties=[...S.parties].sort((a,b)=>a.name.localeCompare(b.name));
+  const list=[...S.payments].sort((a,b)=>(b.date||"").localeCompare(a.date||""));
+  return `<div class="stack">
+  <section class="panel stack"><h2>Record money received</h2>
+    <div class="row">
+      <label class="f grow"><span>From</span><select id="payParty"><option value="">Choose dealer or customer…</option>${parties.map(p=>{const s=partyStats(p.id);return `<option value="${p.id}">${esc(p.name)} — pending ${fmtN(s.bal)}</option>`;}).join("")}</select></label>
+      <label class="f grow"><span>Against invoice</span><select id="payInv"><option value="">General (oldest pending first)</option></select></label>
+    </div>
+    <div class="row">
+      <label class="f"><span>Amount (Rs)</span><input type="number" id="payAmt" min="0" step="1"></label>
+      <label class="f"><span>Date</span><input type="date" id="payDate" value="${today()}"></label>
+      <label class="f"><span>Method</span><select id="payMethod">${["Cash","Bank transfer","Cheque","Online"].map(m=>`<option>${m}</option>`).join("")}</select></label>
+      <label class="f grow"><span>Reference / cheque no.</span><input id="payRef"></label>
+      <button class="btn primary" data-act="savePay">Save payment</button>
+    </div>
+  </section>
+  <section class="stack"><h2>Payments received</h2>
+  ${list.length?`<div class="tablebox"><table><thead><tr><th>Date</th><th>From</th><th>Invoice</th><th>Method</th><th>Reference</th><th class="n">Amount</th><th></th></tr></thead><tbody>
+  ${list.map(p=>{const pa=party(p.partyId),inv=S.invoices.find(i=>i.id===p.invoiceId);return `<tr><td>${fmtD(p.date)}</td><td>${esc(pa?pa.name:"(deleted)")}</td><td class="mono">${inv?esc(inv.no):"—"}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td><td><span class="confirm" data-del-wrap="${p.id}"><button class="btn sm" data-act="askDelPay" data-id="${p.id}">Delete</button></span></td></tr>`;}).join("")}
+  </tbody><tfoot><tr><td colspan="5">${list.length} payments</td><td class="n">${fmtN(sum(list,p=>p.amount))}</td><td></td></tr></tfoot></table></div>`:`<div class="panel empty">No payments recorded yet.</div>`}
+  </section></div>`;
+}
+function fillPayInvoices(){
+  const sel=$("#payInv"),pid=$("#payParty")?.value;if(!sel)return;const keep=sel.value;
+  const inv=S.invoices.filter(i=>i.partyId===pid&&invBal(i)>0.01).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  sel.innerHTML=`<option value="">General (oldest pending first)</option>`+inv.map(i=>`<option value="${i.id}">${esc(i.no)} · ${fmtD(i.date)} · pending ${fmtN(invBal(i))}</option>`).join("");
+  if([...sel.options].some(o=>o.value===keep))sel.value=keep;
+}
+
+function vParties(){
+  let list=S.parties.map(p=>Object.assign({p},partyStats(p.id)));
+  if(ui.partyFilter!=="all")list=list.filter(x=>x.p.type===ui.partyFilter);
+  list.sort((a,b)=>b.bal-a.bal||a.p.name.localeCompare(b.p.name));
+  return `<div class="stack">
+  <section class="panel stack"><h2>Add dealer or customer</h2>
+    <div class="row">
+      <label class="f"><span>Type</span><select id="ptType"><option value="dealer">Dealer / sub-dealer</option><option value="customer">Customer</option></select></label>
+      <label class="f grow"><span>Name</span><input id="ptName"></label>
+      <label class="f"><span>Phone</span><input id="ptPhone" inputmode="tel"></label>
+      <label class="f"><span>CNIC</span><input id="ptCnic" placeholder="35202-1234567-1"></label>
+      <label class="f"><span>NTN / STRN</span><input id="ptNtn"></label>
+      <label class="f grow"><span>Address / city</span><input id="ptAddr"></label>
+      <button class="btn primary" data-act="saveParty">Add</button>
+    </div>
+  </section>
+  <section class="stack"><div class="row between"><h2>Balances</h2>
+    <label class="f"><span>Show</span><select id="partyFilter" data-fresh="1">${[["all","Everyone"],["dealer","Dealers"],["customer","Customers"]].map(([k,l])=>`<option value="${k}" ${ui.partyFilter===k?"selected":""}>${l}</option>`).join("")}</select></label></div>
+  ${list.length?`<div class="tablebox"><table><thead><tr><th>Name</th><th>Type</th><th>Phone</th><th>CNIC / NTN</th><th class="n">Bikes</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Pending</th></tr></thead><tbody>
+  ${list.map(x=>`<tr class="click" data-party="${x.p.id}"><td>${esc(x.p.name)}</td><td>${typePill(x.p.type)}</td><td>${esc(x.p.phone)}</td><td class="mono">${esc([x.p.cnic,x.p.ntn].filter(Boolean).join(" / "))}</td><td class="n">${x.bikes}</td><td class="n">${fmtN(x.billed)}</td><td class="n">${fmtN(x.paid)}</td><td class="n">${x.bal>0.01?`<b>${fmtN(x.bal)}</b>`:fmtN(x.bal)}</td></tr>`).join("")}
+  </tbody><tfoot><tr><td colspan="4">${list.length} parties</td><td class="n">${sum(list,x=>x.bikes)}</td><td class="n">${fmtN(sum(list,x=>x.billed))}</td><td class="n">${fmtN(sum(list,x=>x.paid))}</td><td class="n">${fmtN(sum(list,x=>x.bal))}</td></tr></tfoot></table></div>
+  <p class="note">Tap a name to see its full statement (ledger) and download it.</p>`:`<div class="panel empty">No dealers or customers yet.</div>`}
+  </section></div>`;
+}
+
+function vInstal(){
+  const rows=[];S.invoices.forEach(i=>{const sc=schedule(i);if(!sc)return;const next=sc.rows.find(r=>r.status!=="paid");const od=sc.rows.filter(r=>r.status==="overdue");rows.push({i,sc,next,odAmt:sum(od,r=>r.amt-r.got),odN:od.length});});
+  rows.sort((a,b)=>b.odAmt-a.odAmt||((a.next?.due||"9")).localeCompare(b.next?.due||"9"));
+  return `<div class="stack"><div class="row between"><h2>Instalment accounts</h2><span class="sub">${rows.length} accounts · overdue ${fmtN(sum(rows,r=>r.odAmt))}</span></div>
+  ${rows.length?`<div class="tablebox"><table><thead><tr><th>Invoice</th><th>Customer</th><th>Phone</th><th class="n">Monthly</th><th class="n">Paid months</th><th>Next due</th><th class="n">Overdue</th><th class="n">Balance</th></tr></thead><tbody>
+  ${rows.map(x=>{const p=party(x.i.partyId);const paidN=x.sc.rows.filter(r=>r.status==="paid").length;return `<tr class="click" data-inv="${x.i.id}"><td class="mono">${esc(x.i.no)}</td><td>${esc(x.i.partyName)}</td><td>${esc(p&&p.phone)}</td><td class="n">${fmtN(x.sc.each)}</td><td class="n">${paidN} / ${x.sc.rows.length}</td><td>${x.next?fmtD(x.next.due):`<span class="pill ok">Complete</span>`}</td><td class="n">${x.odAmt>0?`<span class="pill bad">${fmtN(x.odAmt)} (${x.odN})</span>`:"—"}</td><td class="n">${fmtN(invBal(x.i))}</td></tr>`;}).join("")}
+  </tbody></table></div>`:`<div class="panel empty">No instalment sales yet. Choose <b>Instalments</b> as the payment type when making an invoice.</div>`}
+  <p class="note">Payments are applied to the down payment first, then to each month in order. Open an invoice to see its full schedule.</p></div>`;
+}
+
+function fbrRows(month){return S.invoices.filter(i=>(i.date||"").startsWith(month)).sort((a,b)=>(a.date+a.no).localeCompare(b.date+b.no));}
+function vFbr(){
+  const list=fbrRows(ui.fbrMonth);const missing=list.filter(i=>!i.fbrNo).length;
+  return `<div class="stack">
+  <div class="row between"><div class="row"><label class="f"><span>Month</span><input type="month" id="fbrMonth" data-fresh="1" value="${esc(ui.fbrMonth)}"></label></div>
+    <button class="btn" data-act="fbrCsv" ${list.length?"":"disabled"}>Download month for FBR (CSV)</button></div>
+  <div class="kpis">
+    <div class="kpi"><span class="v">${list.length}</span><span class="l">Invoices</span></div>
+    <div class="kpi"><span class="v">${sum(list,i=>(i.items||[]).length)}</span><span class="l">Bikes</span></div>
+    <div class="kpi"><span class="v">${fmtN(sum(list,i=>i.subtotal))}</span><span class="l">Value before tax (Rs)</span></div>
+    <div class="kpi"><span class="v">${fmtN(sum(list,i=>i.tax))}</span><span class="l">Sales tax (Rs)</span></div>
+    <div class="kpi"><span class="v">${fmtN(sum(list,i=>i.furtherTax))}</span><span class="l">Further tax (Rs)</span></div>
+    <div class="kpi ${missing?"alert":""}"><span class="v">${missing}</span><span class="l">Missing FBR invoice no.</span></div>
+  </div>
+  ${list.length?`<div class="tablebox"><table><thead><tr><th>Date</th><th>Invoice</th><th>FBR invoice no.</th><th>Buyer</th><th>Buyer NTN / CNIC</th><th>Engine / chassis</th><th class="n">Value excl. tax</th><th class="n">Sales tax</th><th class="n">Further tax</th><th class="n">Total</th></tr></thead><tbody>
+  ${list.map(i=>`<tr class="click" data-inv="${i.id}"><td>${fmtD(i.date)}</td><td class="mono">${esc(i.no)}</td><td class="mono">${i.fbrNo?esc(i.fbrNo):`<span class="pill warn">Missing</span>`}</td><td>${esc(i.partyName)}</td><td class="mono">${esc(i.buyerNtn||i.buyerCnic)}</td><td class="mono">${(i.items||[]).map(x=>esc(x.engine)+" / "+esc(x.chassis)).join("<br>")}</td><td class="n">${fmtN(i.subtotal)}</td><td class="n">${fmtN(i.tax)}</td><td class="n">${fmtN(i.furtherTax)}</td><td class="n">${fmtN(i.total)}</td></tr>`).join("")}
+  </tbody><tfoot><tr><td colspan="6">Total</td><td class="n">${fmtN(sum(list,i=>i.subtotal))}</td><td class="n">${fmtN(sum(list,i=>i.tax))}</td><td class="n">${fmtN(sum(list,i=>i.furtherTax))}</td><td class="n">${fmtN(sum(list,i=>i.total))}</td></tr></tfoot></table></div>`:`<div class="panel empty">No invoices in this month.</div>`}
+  <p class="note">This report lists every sale with buyer NTN/CNIC, engine and chassis numbers and tax, ready for your sales tax return or your tax consultant. If you're on FBR Digital Invoicing, issue the invoice in FBR's system and type its FBR invoice number on the invoice here (open an invoice to add it). Direct sending to FBR will be added after your FBR Digital Invoicing integration (via PRAL) is approved.</p></div>`;
+}
+
+function vTeam(){
+  if(!isOwner())return `<section class="panel stack"><h2>Team</h2><p class="note">You are staff in this showroom. Only the owner can change business details, delete records or add people.</p></section>`;
+  return `<section class="panel stack"><h2>Team</h2><p class="note">Add staff by email. They create an account with that same email and get access automatically. Staff can add stock, invoices and payments but can't delete or change these details.</p>
+  <div class="tablebox"><table><thead><tr><th>Email</th><th>Role</th><th></th></tr></thead><tbody>
+  ${S.members.map(m=>`<tr><td>${esc(m.email)}</td><td>${m.role==="owner"?'<span class="pill acc">Owner</span>':'<span class="pill neutral">Staff</span>'}</td><td>${me&&m.userId===me.id?'<span class="sub">You</span>':`<button class="btn sm" data-act="delMember" data-id="${m.userId}">Remove</button>`}</td></tr>`).join("")}
+  ${S.invites.map(v=>`<tr><td>${esc(v.email)}</td><td><span class="pill warn">Invited · ${v.role==="owner"?"Owner":"Staff"}</span></td><td><button class="btn sm" data-act="delInvite" data-id="${v.id}">Cancel invite</button></td></tr>`).join("")}
+  </tbody></table></div>
+  <div class="row"><label class="f grow"><span>Email</span><input id="invEmail" type="email"></label><label class="f"><span>Role</span><select id="invRole"><option value="staff">Staff</option><option value="owner">Owner</option></select></label><button class="btn primary" data-act="invite">Invite</button></div></section>`;
+}
+function vSettings(){
+  const st=settings();
+  return `<div class="stack"><section class="panel stack"><h2>Business details</h2><p class="note">These print on every invoice.</p>
+    <div class="row">
+      <label class="f grow"><span>Business name</span><input id="stName" value="${esc(st.name)}"></label>
+      <label class="f grow"><span>Address</span><input id="stAddr" value="${esc(st.address)}"></label>
+      <label class="f"><span>Phone</span><input id="stPhone" value="${esc(st.phone)}"></label>
+    </div><div class="row">
+      <label class="f"><span>NTN</span><input id="stNtn" value="${esc(st.ntn)}"></label>
+      <label class="f"><span>STRN (sales tax reg. no.)</span><input id="stStrn" value="${esc(st.strn)}"></label>
+      <label class="f"><span>Default sales tax %</span><input id="stTax" type="number" step="0.01" value="${esc(st.taxRate)}"></label>
+      <label class="f"><span>Invoice number prefix</span><input id="stPrefix" value="${esc(st.prefix)}"></label>
+      <button class="btn primary" data-act="saveSettings">Save details</button>
+    </div></section>
+    ${vTeam()}
+    <section class="panel stack"><h2>Backup</h2><p class="note">Your records are saved online. Also download a backup file every week and keep it safe.</p>
+    <div class="row"><button class="btn" data-act="backup">Download backup (JSON)</button></div></section></div>`;
+}
+
+/* ---------- modals ---------- */
+function closeModal(){$("#modalRoot").innerHTML="";}
+function openModal(html){$("#modalRoot").innerHTML=`<div class="modal-bg" data-close="1"><div class="modal" role="dialog" aria-modal="true">${html}</div></div>`;const f=$("#modalRoot .modal button");if(f)f.focus();}
+let openInvId=null,openPartyId=null;
+function invoiceHtml(inv,forFile){
+  const st=settings(),p=party(inv.partyId)||{},sc=schedule(inv);
+  const items=(inv.items||[]).map((it,k)=>`<tr><td>${k+1}</td><td>${esc(it.model)} ${esc(it.colour)}</td><td class="mono">${esc(it.engine)}</td><td class="mono">${esc(it.chassis)}</td><td class="n">${fmtN(it.price)}</td></tr>`).join("");
+  return `<div class="inv-head"><div><div class="big">${esc(st.name||"Your business name")}</div><div class="sub">${esc(st.address)}${st.phone?" · "+esc(st.phone):""}</div><div class="sub mono">${st.ntn?"NTN "+esc(st.ntn):""}${st.strn?" · STRN "+esc(st.strn):""}</div></div>
+    <div style="text-align:right"><div class="big">SALES TAX INVOICE</div><div class="mono">${esc(inv.no)} · ${fmtD(inv.date)}</div><div class="mono">FBR invoice no: ${esc(inv.fbrNo||"—")}</div></div></div>
+  <div><h3>Bill to</h3><div><b>${esc(inv.partyName)}</b> (${inv.partyType==="dealer"?"Dealer":"Customer"})</div><div class="sub">${esc([p.address,p.phone].filter(Boolean).join(" · "))}</div><div class="sub mono">${inv.buyerCnic?"CNIC "+esc(inv.buyerCnic):""}${inv.buyerNtn?" · NTN "+esc(inv.buyerNtn):""}</div></div>
+  <div class="tablebox"><table><thead><tr><th>#</th><th>Bike</th><th>Engine no.</th><th>Chassis no.</th><th class="n">Price excl. tax</th></tr></thead><tbody>${items}</tbody></table></div>
+  <div class="totals"><span>Value before tax</span><span>${fmtN(inv.subtotal)}</span><span>Sales tax ${inv.taxRate}%</span><span>${fmtN(inv.tax)}</span>${num(inv.furtherTax)?`<span>Further tax ${inv.furtherRate}%</span><span>${fmtN(inv.furtherTax)}</span>`:""}<span class="t">Total</span><span class="t">${fmtN(inv.total)}</span><span>Received</span><span>${fmtN(paidFor(inv))}</span><span class="t">Balance</span><span class="t">${fmtN(invBal(inv))}</span></div>
+  ${sc?`<div class="stack"><h3>Instalment plan · down payment ${fmtN(sc.down)} ${sc.downPaid?"(paid)":"(pending)"}</h3><div class="tablebox"><table><thead><tr><th>#</th><th>Due date</th><th class="n">Amount</th><th class="n">Paid</th><th>Status</th></tr></thead><tbody>
+    ${sc.rows.map(r=>`<tr><td>${r.n}</td><td>${fmtD(r.due)}</td><td class="n">${fmtN(r.amt)}</td><td class="n">${fmtN(r.got)}</td><td>${{paid:'<span class="pill ok">Paid</span>',overdue:'<span class="pill bad">Overdue</span>',part:'<span class="pill warn">Part paid</span>',due:'<span class="pill neutral">Due</span>'}[r.status]}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+  ${inv.notes?`<div class="sub">Notes: ${esc(inv.notes)}</div>`:""}`;
+}
+function showInvoice(id){
+  const inv=S.invoices.find(i=>i.id===id);if(!inv){closeModal();return;}openInvId=id;openPartyId=null;
+  const pays=S.payments.filter(p=>p.invoiceId===id).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  openModal(`<div class="row between"><h2>Invoice ${esc(inv.no)}</h2><button class="btn" data-close="1">Close</button></div>
+  ${invoiceHtml(inv)}
+  ${pays.length?`<div class="stack"><h3>Payments on this invoice</h3><div class="tablebox"><table><tbody>${pays.map(p=>`<tr><td>${fmtD(p.date)}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td></tr>`).join("")}</tbody></table></div></div>`:""}
+  <div class="row"><label class="f grow"><span>FBR invoice no.</span><input id="mFbr" value="${esc(inv.fbrNo)}"></label><button class="btn" data-act="saveFbr">Save FBR no.</button></div>
+  <div class="row between"><div class="row"><button class="btn primary" data-act="dlInv">Download invoice</button><button class="btn" data-act="payThis">Record payment</button></div>
+  <span class="confirm" id="delInvWrap"><button class="btn danger" data-act="askDelInv">Delete invoice</button></span></div>`);
+}
+function partyStatement(pid){
+  const ev=[];S.invoices.filter(i=>i.partyId===pid).forEach(i=>ev.push({date:i.date,d:"Invoice "+i.no+" · "+(i.items||[]).length+" bike(s)",dr:num(i.total),cr:0,inv:i.id}));
+  S.payments.filter(p=>p.partyId===pid).forEach(p=>ev.push({date:p.date,d:"Payment · "+(p.method||"")+(p.ref?" · "+p.ref:""),dr:0,cr:num(p.amount)}));
+  ev.sort((a,b)=>(a.date||"").localeCompare(b.date||"")||b.dr-a.dr);let bal=0;ev.forEach(e=>{bal=r2(bal+e.dr-e.cr);e.bal=bal;});return ev;
+}
+function showParty(pid){
+  const p=party(pid);if(!p){closeModal();return;}openPartyId=pid;openInvId=null;const s=partyStats(pid),ev=partyStatement(pid);
+  openModal(`<div class="row between"><h2>${esc(p.name)}</h2><button class="btn" data-close="1">Close</button></div>
+  <div class="sub">${p.type==="dealer"?"Dealer":"Customer"}${p.phone?" · "+esc(p.phone):""}${p.cnic?" · CNIC "+esc(p.cnic):""}${p.ntn?" · NTN "+esc(p.ntn):""}${p.address?" · "+esc(p.address):""}</div>
+  <div class="kpis"><div class="kpi"><span class="v">${s.bikes}</span><span class="l">Bikes taken</span></div><div class="kpi"><span class="v">${fmtN(s.billed)}</span><span class="l">Billed (Rs)</span></div><div class="kpi"><span class="v">${fmtN(s.paid)}</span><span class="l">Received (Rs)</span></div><div class="kpi ${s.bal>0.01?"alert":""}"><span class="v">${fmtN(s.bal)}</span><span class="l">Pending (Rs)</span></div></div>
+  ${ev.length?`<div class="tablebox"><table><thead><tr><th>Date</th><th>Details</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Balance</th></tr></thead><tbody>${ev.map(e=>`<tr ${e.inv?`class="click" data-inv="${e.inv}"`:""}><td>${fmtD(e.date)}</td><td>${esc(e.d)}</td><td class="n">${e.dr?fmtN(e.dr):""}</td><td class="n">${e.cr?fmtN(e.cr):""}</td><td class="n">${fmtN(e.bal)}</td></tr>`).join("")}</tbody></table></div>`:`<div class="empty">No invoices or payments yet.</div>`}
+  <div class="row between"><button class="btn primary" data-act="dlStatement">Download statement (CSV)</button>
+  ${s.inv.length?"":`<span class="confirm" id="delPartyWrap"><button class="btn danger" data-act="askDelParty">Delete</button></span>`}</div>`);
+}
+function rerenderModal(){if(!$("#modalRoot").innerHTML)return;const k=captureModal();if(openInvId)showInvoice(openInvId);else if(openPartyId)showParty(openPartyId);restoreModal(k);}
+function captureModal(){const f=$("#mFbr");return f?{fbr:f.value,focus:document.activeElement===f}:null;}
+function restoreModal(k){if(!k)return;const f=$("#mFbr");if(f){f.value=k.fbr;if(k.focus)f.focus();}}
+
+/* ---------- actions ---------- */
+const ownerOnly=()=>{if(isOwner())return true;toast("Only the owner can do this.");return false;};
+const A={
+  async receive(){
+    const lines=$("#rcvLines").value.split(/\n/).map(l=>l.trim()).filter(Boolean);
+    const model=$("#rcvModel").value.trim();
+    if(!model){toast("Enter the model");return;} if(!lines.length){toast("Enter at least one engine/chassis line");return;}
+    const existing=new Set(S.bikes.map(b=>(b.chassis||"").toUpperCase()).filter(Boolean));const dup=[];
+    const bikes=lines.map(l=>{const [e,c]=l.split(/[,\t;]+/).map(x=>(x||"").trim());return{engine:e||"",chassis:c||""};});
+    const seen=new Set();bikes.forEach(b=>{const k=b.chassis.toUpperCase();if(k&&(existing.has(k)||seen.has(k)))dup.push(b.chassis);seen.add(k);});
+    if(dup.length){toast("Chassis already entered: "+dup.slice(0,3).join(", "));return;}
+    const base={showroomId:shop.id,model,colour:$("#rcvColour").value.trim(),cost:num($("#rcvPrice").value),challan:$("#rcvChallan").value.trim(),receivedDate:$("#rcvDate").value||today(),status:"in_stock"};
+    const ok=await guard(()=>q(sb.from("bikes").insert(bikes.map(b=>toRow(Object.assign({},base,b))))));
+    if(ok){$("#rcvLines").value="";$("#rcvCount").textContent="";toast(bikes.length+" bike(s) added to stock");}
+  },
+  async saveInv(){
+    const pid=$("#invParty").value,p=party(pid);if(!p){toast("Choose who the bikes are sold to");return;}
+    const x=readInvForm();if(!x.items.length){toast("Tick at least one bike");return;}
+    if(x.items.some(i=>!i.price)){toast("Enter a sale price for every ticked bike");return;}
+    const plan=$("#invPlan").value==="instalment"?"instalment":"full";
+    const inv=Object.assign(x,{showroomId:shop.id,date:$("#invDate").value||today(),partyId:pid,fbrNo:$("#invFbr").value.trim(),plan,notes:$("#invNotes").value.trim()});
+    if(plan==="instalment"){inv.down=num($("#invDown").value);inv.months=Math.max(1,num($("#invMonths").value)|0);inv.startDate=$("#invStart").value||addMonths(inv.date,1);}
+    const recv=num($("#invRecv").value);let made=null;
+    const ok=await guard(async()=>{made=await q(sb.rpc("create_invoice",{p:toRow(inv),pay:recv>0?{amount:recv,method:$("#invMethod").value,ref:"At sale"}:null}));});
+    if(ok&&made){["invRecv","invNotes","invFbr","invDown"].forEach(k=>{const e=document.getElementById(k);if(e)e.value="";});const pl=$("#invPlan");if(pl){pl.value="full";updateInvTotals();}toast("Invoice "+made.no+" saved");showInvoice(made.id);}
+  },
+  async savePay(){
+    const pid=$("#payParty").value;if(!party(pid)){toast("Choose who paid");return;}
+    const amt=num($("#payAmt").value);if(amt<=0){toast("Enter the amount received");return;}
+    const invId=$("#payInv").value;const date=$("#payDate").value||today(),method=$("#payMethod").value,ref=$("#payRef").value.trim();
+    const rows=[];const row=(invoiceId,amount,r)=>rows.push(toRow({showroomId:shop.id,partyId:pid,invoiceId,amount,date,method,ref:r}));
+    if(invId)row(invId,amt,ref);else{
+      let left=amt;const open=S.invoices.filter(i=>i.partyId===pid&&invBal(i)>0.01).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+      for(const i of open){if(left<=0)break;const part=r2(Math.min(left,invBal(i)));row(i.id,part,ref);left=r2(left-part);}
+      if(left>0)row("",left,ref||"Advance");}
+    if(await guard(()=>q(sb.from("payments").insert(rows)))){$("#payAmt").value="";$("#payRef").value="";toast("Payment of "+rs(amt)+" saved");}
+  },
+  async saveParty(){
+    const name=$("#ptName").value.trim();if(!name){toast("Enter a name");return;}
+    const d={showroomId:shop.id,type:$("#ptType").value,name,phone:$("#ptPhone").value.trim(),cnic:$("#ptCnic").value.trim(),ntn:$("#ptNtn").value.trim(),address:$("#ptAddr").value.trim()};
+    if(await guard(()=>q(sb.from("parties").insert(toRow(d))))){["ptName","ptPhone","ptCnic","ptNtn","ptAddr"].forEach(k=>$("#"+k).value="");toast(name+" added");}
+  },
+  async saveSettings(){if(!ownerOnly())return;
+    const d={name:$("#stName").value.trim()||shop.name,address:$("#stAddr").value.trim(),phone:$("#stPhone").value.trim(),ntn:$("#stNtn").value.trim(),strn:$("#stStrn").value.trim(),tax_rate:num($("#stTax").value),prefix:$("#stPrefix").value.trim()||"INV-"};
+    if(await guard(()=>q(sb.from("showrooms").update(d).eq("id",shop.id))))toast("Details saved");
+  },
+  async saveFbr(){const v=$("#mFbr").value.trim();if(await guard(()=>q(sb.from("invoices").update({fbr_no:v}).eq("id",openInvId))))toast("FBR number saved");},
+  dlInv(){const inv=S.invoices.find(i=>i.id===openInvId);if(!inv)return;
+    const style=document.querySelector("style").textContent;
+    const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(inv.no)}</title><style>${style} body{padding:24px;max-width:860px;margin:auto} .modal{border:0}</style></head><body><div class="modal">${invoiceHtml(inv,true)}<p class="sub">Press Ctrl+P to print or save as PDF.</p></div></body></html>`;
+    save(`${inv.no} ${inv.partyName}.html`.replace(/[\\/:*?"<>|]/g,"-"),html);},
+  payThis(){const inv=S.invoices.find(i=>i.id===openInvId);if(!inv)return;closeModal();go("payments");$("#payParty").value=inv.partyId;fillPayInvoices();$("#payInv").value=inv.id;$("#payAmt").value=Math.max(0,invBal(inv));$("#payAmt").focus();},
+  askDelInv(){if(!ownerOnly())return;$("#delInvWrap").innerHTML=`<span class="sub">Delete invoice, its payments, and return bikes to stock?</span><button class="btn sm danger" data-act="delInv">Yes, delete</button><button class="btn sm" data-act="cancelModal">Cancel</button>`;},
+  cancelModal(){rerenderModal();},
+  async delInv(){const id=openInvId;if(await guard(()=>q(sb.rpc("delete_invoice",{p_id:id})))){closeModal();toast("Invoice deleted");}},
+  askDelParty(){if(!ownerOnly())return;$("#delPartyWrap").innerHTML=`<span class="sub">Delete this person?</span><button class="btn sm danger" data-act="delParty">Yes</button><button class="btn sm" data-act="cancelModal">Cancel</button>`;},
+  async delParty(){const id=openPartyId;if(await guard(()=>q(sb.from("parties").delete().eq("id",id)))){closeModal();toast("Deleted");}},
+  askDelBike(el){if(!ownerOnly())return;const w=el.closest("[data-del-wrap]");w.innerHTML=`<button class="btn sm danger" data-act="delBike" data-id="${el.dataset.id}">Confirm</button><button class="btn sm" data-act="rerender">Cancel</button>`;},
+  async delBike(el){if(await guard(()=>q(sb.from("bikes").delete().eq("id",el.dataset.id))))toast("Bike removed from stock");},
+  askDelPay(el){if(!ownerOnly())return;const w=el.closest("[data-del-wrap]");w.innerHTML=`<button class="btn sm danger" data-act="delPay" data-id="${el.dataset.id}">Confirm</button><button class="btn sm" data-act="rerender">Cancel</button>`;},
+  async delPay(el){if(await guard(()=>q(sb.from("payments").delete().eq("id",el.dataset.id))))toast("Payment deleted");},
+  async invite(){if(!ownerOnly())return;const email=$("#invEmail").value.trim().toLowerCase();if(!/^\S+@\S+\.\S+$/.test(email)){toast("Enter a valid email");return;}
+    if(await guard(()=>q(sb.from("invites").insert({showroom_id:shop.id,email,role:$("#invRole").value})))){$("#invEmail").value="";toast("Invited "+email+". Ask them to create an account with this email.");}},
+  async delInvite(el){if(await guard(()=>q(sb.from("invites").delete().eq("id",el.dataset.id))))toast("Invite removed");},
+  async delMember(el){if(await guard(()=>q(sb.from("members").delete().eq("showroom_id",shop.id).eq("user_id",el.dataset.id))))toast("Removed from showroom");},
+  signout(){AUTH.signout();},
+  rerender(){render();},
+  stockCsv(){const rows=[["Received","Model","Colour","Engine no","Chassis no","Challan","Cost","Status","Sold to","Invoice"]];
+    S.bikes.forEach(b=>{const inv=S.invoices.find(i=>i.id===b.invoiceId);rows.push([b.receivedDate,b.model,b.colour,b.engine,b.chassis,b.challan,b.cost,b.status==="sold"?"Sold":"In stock",inv?inv.partyName:"",inv?inv.no:""]);});
+    save("stock-"+today()+".csv",csv(rows));},
+  fbrCsv(){const st=settings();const rows=[["Seller NTN","Seller STRN","Invoice date","Invoice no","FBR invoice no","Buyer name","Buyer type","Buyer NTN","Buyer CNIC","Item","Engine no","Chassis no","Value excl tax","Sales tax rate %","Sales tax","Further tax rate %","Further tax","Total incl tax"]];
+    fbrRows(ui.fbrMonth).forEach(i=>{const items=i.items||[];items.forEach(it=>{const share=num(i.subtotal)?num(it.price)/num(i.subtotal):0;rows.push([st.ntn,st.strn,i.date,i.no,i.fbrNo,i.partyName,i.partyType==="dealer"?"Dealer":"Customer",i.buyerNtn,i.buyerCnic,(it.model+" "+it.colour).trim(),it.engine,it.chassis,r2(it.price),i.taxRate,r2(num(i.tax)*share),i.furtherRate,r2(num(i.furtherTax)*share),r2(num(i.total)*share)]);});});
+    save("fbr-sales-"+ui.fbrMonth+".csv",csv(rows));},
+  dlStatement(){const p=party(openPartyId);if(!p)return;const rows=[["Date","Details","Billed","Received","Balance"]];partyStatement(p.id).forEach(e=>rows.push([e.date,e.d,e.dr||"",e.cr||"",e.bal]));save(("statement-"+p.name+"-"+today()+".csv").replace(/[\\/:*?"<>|]/g,"-"),csv(rows));},
+  backup(){const {bikes,parties,invoices,payments,settings}=S;save("showroom-backup-"+today()+".json",JSON.stringify({exported:new Date().toISOString(),bikes,parties,invoices,payments,settings},null,2));}
+};
+
+function go(t){tab=t;try{localStorage.setItem("bsm_tab",t);}catch(e){}renderTabs();render();window.scrollTo(0,0);}
+
+document.addEventListener("click",e=>{
+  const t=e.target;
+  const au=t.closest("[data-auth]");if(au){e.preventDefault();au.disabled=true;Promise.resolve(AUTH[au.dataset.auth]()).finally(()=>{au.disabled=false;});return;}
+  const ag=t.closest("[data-auth-go]");if(ag){showAuth(ag.dataset.authGo);return;}
+  const tb=t.closest("[data-tab]");if(tb){go(tb.dataset.tab);return;}
+  const g=t.closest("[data-go]");if(g){go(g.dataset.go);return;}
+  if(t.matches("[data-close]")){closeModal();openInvId=openPartyId=null;return;}
+  const a=t.closest("[data-act]");if(a){e.preventDefault();A[a.dataset.act]&&A[a.dataset.act](a);return;}
+  const iv=t.closest("[data-inv]");if(iv&&!t.matches("input,select")){showInvoice(iv.dataset.inv);return;}
+  const pt=t.closest("[data-party]");if(pt){showParty(pt.dataset.party);return;}
+});
+document.addEventListener("keydown",e=>{
+  if(e.key==="Enter"&&e.target.closest&&e.target.closest("#auth")&&e.target.matches("input")){const b=$("#auth [data-auth]");if(b)b.click();return;}if(e.key==="Escape"&&$("#modalRoot").innerHTML){closeModal();openInvId=openPartyId=null;}});
+document.addEventListener("input",e=>{
+  const id=e.target.id;
+  if(id==="stockQ"){ui.stockQ=e.target.value;const pos=e.target.selectionStart;render();const q=$("#stockQ");q.focus();try{q.setSelectionRange(pos,pos);}catch(_){}}
+  if(tab==="sales"){if(e.target.dataset.price){const c=document.getElementById("pk_"+e.target.dataset.price);if(c&&e.target.value)c.checked=true;}updateInvTotals();}
+  if(id==="rcvLines"){const n=e.target.value.split(/\n/).filter(l=>l.trim()).length;$("#rcvCount").textContent=n?n+" bike(s) ready to add":"";}
+});
+document.addEventListener("change",e=>{
+  const id=e.target.id;
+  if(id==="stockFilter"){ui.stockFilter=e.target.value;render();}
+  if(id==="partyFilter"){ui.partyFilter=e.target.value;render();}
+  if(id==="fbrMonth"){ui.fbrMonth=e.target.value||today().slice(0,7);render();}
+  if(id==="payParty")fillPayInvoices();
+  if(id==="shopSwitch"){const m=shops.find(s=>s.showroom_id===e.target.value);if(m)openShop(m);}
+  if(tab==="sales")updateInvTotals();
+});
+/* live updates: re-render the current tab and any open modal */
+const _render=render;render=function(){_render();rerenderModal();};
+start();
+})();
+</script>
+</body>
+</html>
