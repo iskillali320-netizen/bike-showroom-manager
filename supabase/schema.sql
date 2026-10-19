@@ -1,5 +1,6 @@
 -- Bike Showroom Manager — database setup
--- Run this whole file once in Supabase: SQL Editor → New query → paste → Run.
+-- Run this whole file in Supabase: SQL Editor → New query → paste → Run.
+-- It is safe to run again after updates (it only adds or replaces; it never deletes your data).
 -- Every table is locked by Row Level Security: a user only sees rows of showrooms they belong to.
 
 -- gen_random_uuid() is built into Postgres 13+ (Supabase uses 15+).
@@ -181,9 +182,13 @@ end $$;
 
 create or replace function public.accept_invites() returns int
 language plpgsql security definer set search_path = public as $$
-declare n int := 0; my_email text := lower(coalesce(auth.jwt()->>'email',''));
+declare n int := 0; my_email text;
 begin
-  if auth.uid() is null or my_email = '' then return 0; end if;
+  if auth.uid() is null then return 0; end if;
+  -- Use the email stored on the account, and only once it has been confirmed,
+  -- so nobody can claim an invite by signing up with someone else's address.
+  select lower(email) into my_email from auth.users where id = auth.uid() and email_confirmed_at is not null;
+  if coalesce(my_email,'') = '' then return 0; end if;
   insert into members(showroom_id, user_id, email, role)
     select showroom_id, auth.uid(), my_email, role from invites where lower(email) = my_email
     on conflict (showroom_id, user_id) do nothing;
@@ -244,6 +249,45 @@ end $$;
 
 revoke all on function public.create_showroom(text), public.accept_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) from public, anon;
 grant execute on function public.create_showroom(text), public.accept_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) to authenticated;
+grant execute on function public.is_member(uuid), public.is_owner(uuid) to authenticated;
+
+-- ---------- Hardening ----------
+-- Linked rows must belong to the same showroom (stops pointing a payment or bike at another showroom's records).
+create or replace function public.check_same_showroom() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if new.invoice_id is not null and not exists (select 1 from invoices where id = new.invoice_id and showroom_id = new.showroom_id) then
+    raise exception 'Invoice belongs to another showroom';
+  end if;
+  if tg_table_name = 'payments' then
+    if new.party_id is not null and not exists (select 1 from parties where id = new.party_id and showroom_id = new.showroom_id) then
+      raise exception 'Dealer/customer belongs to another showroom';
+    end if;
+  elsif tg_table_name = 'bikes' then
+    if new.sold_to is not null and not exists (select 1 from parties where id = new.sold_to and showroom_id = new.showroom_id) then
+      raise exception 'Dealer/customer belongs to another showroom';
+    end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists payments_same_showroom on public.payments;
+create trigger payments_same_showroom before insert or update on public.payments for each row execute function public.check_same_showroom();
+drop trigger if exists bikes_same_showroom on public.bikes;
+create trigger bikes_same_showroom before insert or update on public.bikes for each row execute function public.check_same_showroom();
+
+-- Explicit table privileges (RLS still applies on top of these). Signed-out visitors get nothing.
+revoke all on public.showrooms, public.members, public.invites, public.parties, public.invoices, public.bikes, public.payments from anon;
+revoke all on public.showrooms, public.members, public.invites, public.parties, public.invoices, public.bikes, public.payments from authenticated;
+grant select on public.showrooms to authenticated;
+grant update (name, address, phone, ntn, strn, tax_rate, prefix) on public.showrooms to authenticated;
+grant select, delete on public.members to authenticated;
+grant select, insert, delete on public.invites to authenticated;
+grant select, insert, update, delete on public.parties, public.bikes, public.payments to authenticated;
+-- Invoices are created/deleted only by the functions; in the app only the FBR number and notes can be edited.
+grant select on public.invoices to authenticated;
+grant update (fbr_no, notes) on public.invoices to authenticated;
+
+revoke all on function public.is_member(uuid), public.is_owner(uuid), public.check_same_showroom() from public, anon;
 grant execute on function public.is_member(uuid), public.is_owner(uuid) to authenticated;
 
 -- ---------- Live updates ----------

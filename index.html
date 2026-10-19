@@ -225,11 +225,13 @@ const AUTH={
     const {data,error}=await sb.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});if(error){showAuth("signup",error.message);return;}
     if(data.session){await afterLogin(data.user);}else showAuth("signin","Account created. Open the confirmation email we sent to "+email+", then sign in.");},
   async forgot(){const email=$("#auEmail").value.trim();const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});showAuth("signin",error?error.message:"If "+email+" has an account, a reset link is on its way.");},
-  async reset(){const pw=$("#auPass").value;if(pw.length<8){toast("Password must be at least 8 characters");return;}const {error}=await sb.auth.updateUser({password:pw});if(error){showAuth("reset",error.message);return;}const {data:{user}}=await sb.auth.getUser();toast("Password changed");await afterLogin(user);},
+  async reset(){const pw=$("#auPass").value;if(pw.length<8){toast("Password must be at least 8 characters");return;}const {error}=await sb.auth.updateUser({password:pw});if(error){showAuth("reset",error.message);return;}recovering=false;try{history.replaceState(null,"",location.pathname);}catch(e){}const {data:{user}}=await sb.auth.getUser();toast("Password changed");await afterLogin(user);},
   async create(){const name=$("#auShop").value.trim();if(!name){toast("Enter the showroom name");return;}try{await q(sb.rpc("create_showroom",{p_name:name}));await afterLogin(me);}catch(e){showAuth("create",e.message);}},
   async signout(){if(chan){sb.removeChannel(chan);chan=null;}await sb.auth.signOut();me=null;shop=null;ready=false;showAuth("signin");}
 };
+let recovering=false;
 async function afterLogin(user){
+  if(recovering)return;
   me=user;try{await sb.rpc("accept_invites");}catch(e){}
   let rows;try{rows=await q(sb.from("members").select("role,showroom_id,showrooms(*)").eq("user_id",user.id));}catch(e){showAuth("signin",e.message);return;}
   shops=rows.filter(r=>r.showrooms);if(!shops.length){showAuth("create");return;}
@@ -249,10 +251,11 @@ async function openShop(m){
 async function start(){
   const C=window.APP_CONFIG||{};
   if(!window.supabase||!C.supabaseUrl||/YOUR_/.test(C.supabaseUrl+C.supabaseAnonKey)){showAuth("setup");return;}
+  recovering=/type=recovery/.test(location.hash+location.search);
   sb=window.supabase.createClient(C.supabaseUrl,C.supabaseAnonKey);
-  sb.auth.onAuthStateChange((ev)=>{if(ev==="PASSWORD_RECOVERY")setTimeout(()=>showAuth("reset"),0);});
+  sb.auth.onAuthStateChange((ev)=>{if(ev==="PASSWORD_RECOVERY"){recovering=true;setTimeout(()=>showAuth("reset"),0);}});
   const {data:{session}}=await sb.auth.getSession();
-  if(location.hash.includes("type=recovery"))return;
+  if(recovering){showAuth("reset");return;}
   if(session)await afterLogin(session.user);else showAuth("signin");
 }
 

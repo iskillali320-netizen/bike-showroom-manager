@@ -10,9 +10,10 @@ Online software for motorcycle showrooms: stock received from the factory, bikes
 
 ### 1. Database (Supabase)
 1. Create a project at supabase.com (region: Singapore).
-2. Open **SQL Editor → New query**, paste all of `supabase/schema.sql`, click **Run**.
+2. Open **SQL Editor → New query**, paste all of `supabase/schema.sql`, click **Run**. Run it again whenever `schema.sql` is updated in this repo; it is safe to re-run and does not delete data.
 3. **Authentication → URL Configuration**: set **Site URL** to your website address (step 3 below), e.g. `https://YOUR-USERNAME.github.io/bike-showroom-manager/`, and add the same address under **Redirect URLs**.
-4. **Project Settings → API**: copy the **Project URL** and the **anon public** key into `config.js`.
+4. **Project Settings → API**: copy the **Project URL** and the **publishable** (or legacy *anon public*) key into `config.js`. Never put the *secret* / *service_role* key or the database password in this repo.
+5. **Authentication → Sign In / Providers → Email**: keep **Confirm email** turned on. Staff invites only work for confirmed emails.
 
 ### 2. Website (GitHub Pages)
 1. In the GitHub repository: **Settings → Pages**.
