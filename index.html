@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Bike Showroom Manager</title>
 <meta name="description" content="Stock, invoices, payments, instalments and FBR sales tax records for motorcycle showrooms.">
-<meta name="theme-color" content="#0f2621">
+<meta name="theme-color" content="#0a0c0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%230f2621'/%3E%3Cg fill='none' stroke='%236fd6b6' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='9' cy='20' r='4'/%3E%3Ccircle cx='23' cy='20' r='4'/%3E%3Cpath d='M9 20l4-8h6l4 8M13 12l3 8h-3'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -13,33 +13,20 @@
 body{margin:0}[hidden]{display:none!important}
 /* Layout: fixed left sidebar (drawer on phones) + top bar + content column; ledger-style tables with mono figures.
    Sign-in: brand panel (product summary) beside the form card; stacks on phones. */
+/* Theme: dark graphite showroom console with an amber "ignition" accent (single committed dark look) */
 :root{
-  --bg:#f3f5f4; --surface:#ffffff; --sunk:#eef1ef; --line:#dde3e0; --line-strong:#c8d0cc;
-  --fg:#16201c; --muted:#56625c; --faint:#7d8983;
-  --accent:#0d6a55; --accent-hover:#0b5a48; --accent-ink:#ffffff; --accent-soft:#e1f1eb;
-  --ok:#1d7436; --ok-soft:#e2f3e6; --warn:#8f5400; --warn-soft:#fcefd6; --bad:#b0261d; --bad-soft:#fbe4e1;
-  --side-bg:#0f2621; --side-fg:#e7f0ec; --side-muted:#98ada5; --side-hover:#163530; --side-active:#1f463c; --side-line:#21403a; --side-accent:#6fd6b6;
-  --shadow:0 1px 2px rgba(15,38,33,.06);
-  --shadow-lg:0 18px 48px rgba(15,38,33,.22);
-  --r:10px; --r-sm:7px;
+  --bg:#0a0c0f; --surface:#12161b; --sunk:#181d23; --line:#232a31; --line-strong:#313942;
+  --fg:#eceff2; --muted:#9aa3ad; --faint:#6b757f;
+  --accent:#f5a524; --accent-hover:#ffb73f; --accent-ink:#1b1305; --accent-soft:rgba(245,165,36,.13);
+  --ok:#3dd68c; --ok-soft:rgba(61,214,140,.12); --warn:#f3c05a; --warn-soft:rgba(243,192,90,.12); --bad:#ff6b5b; --bad-soft:rgba(255,107,91,.13);
+  --side-bg:#08090c; --side-fg:#e6eaee; --side-muted:#8b959f; --side-hover:#13171c; --side-active:#1b2027; --side-line:#1a1f25; --side-accent:#f5a524;
+  --shadow:none; --shadow-lg:0 24px 60px rgba(0,0,0,.6);
+  --r:16px; --r-sm:10px;
   --display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1412; --surface:#161d1a; --sunk:#1d2522; --line:#2b3530; --line-strong:#3a4640;
-  --fg:#e6ece9; --muted:#a1aea8; --faint:#7a8781;
-  --accent:#4cc3a2; --accent-hover:#68d3b4; --accent-ink:#07201a; --accent-soft:#16392f;
-  --ok:#72d18e; --ok-soft:#18321f; --warn:#f1b860; --warn-soft:#3a2c12; --bad:#ff8c82; --bad-soft:#3f1d1a;
-  --side-bg:#0a1311; --side-fg:#e2ebe7; --side-muted:#8a9d96; --side-hover:#122320; --side-active:#183a32; --side-line:#182a25; --side-accent:#6fd6b6;
-  --shadow:none; --shadow-lg:0 18px 48px rgba(0,0,0,.5); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0f1412; --surface:#161d1a; --sunk:#1d2522; --line:#2b3530; --line-strong:#3a4640;
-  --fg:#e6ece9; --muted:#a1aea8; --faint:#7a8781;
-  --accent:#4cc3a2; --accent-hover:#68d3b4; --accent-ink:#07201a; --accent-soft:#16392f;
-  --ok:#72d18e; --ok-soft:#18321f; --warn:#f1b860; --warn-soft:#3a2c12; --bad:#ff8c82; --bad-soft:#3f1d1a;
-  --side-bg:#0a1311; --side-fg:#e2ebe7; --side-muted:#8a9d96; --side-hover:#122320; --side-active:#183a32; --side-line:#182a25; --side-accent:#6fd6b6;
-  --shadow:none; --shadow-lg:0 18px 48px rgba(0,0,0,.5); color-scheme:dark}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -366,6 +353,73 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
   html,body{background:#fff!important;height:auto}
   @page{size:A4;margin:12mm}
 }
+/* ---------- console look ---------- */
+.panel,.kpi{border-radius:var(--r)}
+.panel{background:var(--surface)}
+.brand-mark{color:var(--accent-ink)!important}
+.side{border-right:1px solid var(--side-line)}
+.nav-i[aria-current="page"]{color:var(--fg)}
+.topbar{background:color-mix(in srgb,var(--bg) 88%,transparent)}
+.auth-side{background:radial-gradient(700px 500px at 0% 0%,rgba(245,165,36,.10),transparent 60%),var(--side-bg)}
+.auth-card{background:var(--surface)}
+.feat .ic{background:var(--side-active)}
+.pill::before{opacity:1}
+th{background:var(--sunk)}
+.toast{background:#eceff2;color:#0a0c0f}
+/* KPI with sparkline */
+.kpi{position:relative;overflow:hidden}
+.kpi .sp{position:absolute;right:14px;top:12px;width:84px;height:28px}
+.kpi-top{min-height:28px;padding-right:90px}
+.li .amt .pill{margin-top:4px}
+.kpi-s .chip{margin-right:6px}
+.chip{display:inline-block;font-size:11.5px;font-weight:700;border-radius:99px;padding:2px 8px;white-space:nowrap}
+.chip.up{background:var(--ok-soft);color:var(--ok)}.chip.dn{background:var(--bad-soft);color:var(--bad)}.chip.am{background:var(--accent-soft);color:var(--accent)}.chip.mu{background:var(--sunk);color:var(--muted)}
+/* greeting */
+.greet{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px}
+.greet h2{font-size:26px;font-weight:800}
+/* overview grid */
+.ov2{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:16px}
+@media (max-width:1100px){.ov2{grid-template-columns:minmax(0,1fr)}}
+.bigv{display:flex;flex-wrap:wrap;align-items:baseline;gap:12px}.bigv b{font-family:var(--mono);font-size:28px;font-weight:600;letter-spacing:-.01em}
+.chart svg{display:block;width:100%;height:auto}
+.chart .gl{stroke:var(--line)}.chart .tk{fill:var(--faint);font:13px var(--mono)}.chart .ml{fill:var(--faint);font:13.5px var(--body)}.chart .ml.on{fill:var(--fg);font-weight:600}
+.chart .bar{fill:var(--line-strong)}.chart .bar.on{fill:var(--accent)}.chart .bar:hover{fill:#46505a}.chart .bar.on:hover{fill:var(--accent-hover)}
+.chart .vt{fill:var(--bg);font:700 13px var(--mono)}.chart .vb{fill:var(--fg)}
+.topseller{background:radial-gradient(420px 260px at 70% 55%,rgba(245,165,36,.15),transparent 70%),var(--surface)}
+.ts-bike{display:grid;place-items:center;height:200px;margin:-4px 0 -8px}.ts-bike svg{width:min(380px,100%);filter:drop-shadow(0 18px 16px rgba(0,0,0,.55))}
+.ts-meta{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:10px}
+.ts-meta b.n{font-family:var(--display);font-size:22px;font-weight:800;display:block}
+.ts-price{font-family:var(--mono);font-size:20px;font-weight:600;color:#ffcf7a;text-align:right}.ts-price small{display:block;font:500 12px var(--body);color:var(--muted)}
+.sw{display:flex;gap:6px;align-items:center;font-size:12.5px;color:var(--muted)}.sw i{width:15px;height:15px;border-radius:50%;box-shadow:0 0 0 2px var(--surface),0 0 0 3px #3a424b}
+.st3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0}.st3 div{background:var(--sunk);border-radius:12px;padding:10px 12px}.st3 dt{font-size:11.5px;color:var(--muted)}.st3 dd{margin:2px 0 0;font:600 15px var(--mono)}
+.invg{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.bc{background:var(--sunk);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:6px;border:1px solid transparent;cursor:pointer;text-align:left;color:var(--fg);font:inherit}
+.bc:hover{border-color:var(--line-strong)}
+.bc .img{height:110px;border-radius:10px;background:radial-gradient(120px 60px at 50% 70%,rgba(255,255,255,.06),transparent 70%),#0d1014;display:grid;place-items:center}.bc .img svg{width:min(170px,90%)}
+.bc b{font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bc .r{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.bc .p{font:600 15px var(--mono);white-space:nowrap}.bc .m2{display:flex;flex-direction:column;gap:2px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);padding-top:8px;margin-top:2px}.bc .m2 b{font:600 12px var(--mono);color:var(--ok)}
+.lst{display:flex;flex-direction:column}
+.li{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line);cursor:pointer}.li:last-child{border-bottom:0}
+.li .a{width:38px;height:38px;border-radius:11px;background:var(--sunk);display:grid;place-items:center;font-weight:700;font-size:13px;color:#ffcf7a;text-transform:uppercase}
+.li b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.li span.s{font-size:12px;color:var(--muted)}.li .amt{text-align:right;font:600 14px var(--mono);white-space:nowrap}.li .amt .chip{display:block;margin-top:4px;text-align:center}
+.qa{display:none;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.qa button{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:6px;font:500 11.5px var(--body);color:var(--muted);cursor:pointer}.qa .ic{width:22px;height:22px;color:var(--accent)}
+.hero-m{display:none;border-radius:20px;padding:16px;background:linear-gradient(140deg,#2a1d07,#151109 55%,var(--surface));border:1px solid #3a2a10}
+.hero-m .l{font-size:12.5px;color:#ffcf7a}.hero-m .v{font:600 30px var(--mono);margin:4px 0 10px}.hero-m .v small{font:600 13px var(--body);color:var(--muted);margin-right:6px}
+.hero-m .r{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.hero-m .r div{background:rgba(0,0,0,.3);border-radius:12px;padding:8px 10px}.hero-m dt{font-size:11px;color:var(--muted)}.hero-m dd{margin:0;font:600 14px var(--mono)}
+/* phone bottom bar */
+.tabbar{display:none}
+@media (max-width:1023px){
+  .tabbar{display:flex;position:fixed;left:max(10px,env(safe-area-inset-left,0px));right:max(10px,env(safe-area-inset-right,0px));bottom:calc(10px + env(safe-area-inset-bottom,0px));height:62px;border-radius:20px;background:#11151a;border:1px solid var(--line);justify-content:space-around;align-items:center;z-index:45;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+  .tabbar button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:3px;font:500 10.5px var(--body);color:var(--faint);cursor:pointer;min-width:56px}
+  .tabbar button[aria-current="page"]{color:var(--accent)}
+  .tabbar .ic{width:21px;height:21px}
+  .tabbar .fab{width:52px;height:52px;border-radius:17px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-28px;box-shadow:0 10px 24px rgba(245,165,36,.35);min-width:0}
+  .tabbar .fab .ic{width:24px;height:24px}
+  .content{padding-bottom:110px}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+}
+@media (max-width:700px){.qa{display:grid}.hero-m{display:block}.kpis.ovk .kpi:first-child{display:none}.greet .sub{display:none}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
 </style>
 <style id="docCss"></style>
@@ -419,6 +473,7 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
     </header>
     <div id="banner" class="banner" hidden></div>
     <main id="view" class="content"></main>
+    <nav class="tabbar" id="tabbar" aria-label="Quick menu"></nav>
   </div>
 </div>
 <div id="modalRoot"></div>
@@ -431,7 +486,7 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
 <script src="config.js"></script>
 <script>
 (function(){
-const TABS=[["overview","Overview"],["stock","Stock"],["sales","Sales & invoices"],["payments","Payments"],["parties","Dealers & customers"],["instal","Instalments"],["reports","Reports"],["fbr","FBR / Tax"],["settings","Settings"]];
+const TABS=[["overview","Dashboard"],["stock","Stock"],["sales","Sales & invoices"],["payments","Payments"],["parties","Dealers & customers"],["instal","Instalments"],["reports","Reports"],["fbr","FBR / Tax"],["settings","Settings"]];
 const S={bikes:[],parties:[],invoices:[],payments:[],settings:{}};
 let tab="overview", ready=false, ui={repDate:today(),repMonth:today().slice(0,7),stockFilter:"in_stock",stockQ:"",fbrMonth:today().slice(0,7),partyFilter:"all",partyQ:"",invQ:"",invStatus:"all",payQ:""};
 try{const t=localStorage.getItem("bsm_tab");if(t&&TABS.some(x=>x[0]===t))tab=t;}catch(e){}
@@ -907,7 +962,7 @@ function pickPal(k){const x=palItems[k];if(!x)return;closeSearch();
 /* ---------- render ---------- */
 const NAV={overview:"overview",stock:"stock",sales:"sales",payments:"payments",parties:"parties",instal:"instal",reports:"reports",fbr:"fbr",settings:"settings"};
 const PAGE={
-  overview:["Overview","Where your showroom stands today",()=>`<button class="btn primary" data-go="sales">${ic("plus")}<span class="lbl">New invoice</span></button>`],
+  overview:["Dashboard","Where your showroom stands today",()=>`<button class="btn primary" data-act="newSale">${ic("plus")}<span class="lbl">New sale</span></button>`],
   stock:["Stock","Bikes received from the factory, by engine and chassis number",()=>`<button class="btn primary" data-act="jump" data-target="rcvModel">${ic("plus")}<span class="lbl">Receive bikes</span></button>`],
   sales:["Sales & invoices","Create sales tax invoices and review every sale",()=>`<button class="btn primary" data-act="jump" data-target="invParty">${ic("plus")}<span class="lbl">New invoice</span></button>`],
   payments:["Payments","Money received from dealers and customers",()=>`<button class="btn primary" data-act="jump" data-target="payParty">${ic("plus")}<span class="lbl">Record payment</span></button>`],
@@ -920,6 +975,8 @@ const PAGE={
 function overdueCount(){let n=0;S.invoices.forEach(i=>{const sc=schedule(i);if(sc&&invBal(i)>0.01&&sc.rows.some(r=>r.status==="overdue"))n++;});return n;}
 function renderTabs(){
   const od=ready?overdueCount():0;
+  const tbb=(k,i,l)=>`<button data-tab="${k}" ${k===tab?'aria-current="page"':""}>${ic(i)}<span>${l}</span></button>`;
+  const tb=$("#tabbar");if(tb)tb.innerHTML=tbb("overview","overview","Home")+tbb("stock","stock","Stock")+`<button class="fab" data-act="newSale" aria-label="New sale">${ic("plus")}</button>`+tbb("payments","payments","Money")+tbb("reports","reports","Reports");
   $("#tabs").innerHTML=TABS.map(([k,l])=>`<button class="nav-i" data-tab="${k}" ${k===tab?'aria-current="page"':""}>${ic(NAV[k])}<span>${l}</span>${k==="instal"&&od?`<span class="badge" aria-label="${od} overdue">${od}</span>`:""}</button>`).join("");
 }
 function render(){
@@ -959,57 +1016,128 @@ function invTable(list){
   </tbody></table></div>`;
 }
 
-/* ---------- overview ---------- */
+/* ---------- overview (console design) ---------- */
+const COLOURS={red:"#c8202a",black:"#17181b",blue:"#1d4fa8",grey:"#7d858d",gray:"#7d858d",silver:"#9aa2a9",white:"#e4e7ea",green:"#1f7a4a",yellow:"#e0b21c",orange:"#e06a1c",maroon:"#7a1820",brown:"#6b4a2b",purple:"#5b3a8f"};
+function colourHex(name){const k=String(name||"").toLowerCase();for(const c in COLOURS)if(k.includes(c))return COLOURS[c];return "#7d858d";}
+function shade(hex,f){const n=parseInt(hex.slice(1),16);let r=n>>16,g=n>>8&255,b=n&255;r=Math.round(r*f);g=Math.round(g*f);b=Math.round(b*f);return"#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1);}
+/* generic motorcycle illustration, side view */
+function motoSvg(colour){const c=colourHex(colour),c2=shade(c,.68);
+ return `<svg viewBox="0 0 220 120" aria-hidden="true"><ellipse cx="110" cy="112" rx="96" ry="5" fill="#000" opacity=".45"/>
+${[48,172].map(x=>`<g><circle cx="${x}" cy="84" r="26" fill="#0b0b0c" stroke="#1d1f22" stroke-width="2"/><circle cx="${x}" cy="84" r="18" fill="none" stroke="#9aa3ab" stroke-width="1.6"/><circle cx="${x}" cy="84" r="6" fill="#2a2e33" stroke="#b9c1c8" stroke-width="1.4"/>${[0,40,80,120,160].map(a=>`<line x1="${x}" y1="84" x2="${(x+17*Math.cos(a*Math.PI/180)).toFixed(1)}" y2="${(84+17*Math.sin(a*Math.PI/180)).toFixed(1)}" stroke="#7d868e" stroke-width="1"/>`).join("")}</g>`).join("")}
+<path d="M48 84 L104 76" stroke="#2c3036" stroke-width="5" stroke-linecap="round"/><path d="M22 58 Q30 50 46 52 L54 58 Q40 58 30 64 Z" fill="${c}"/><path d="M150 58 Q172 50 194 66 L188 70 Q172 60 152 64 Z" fill="${c}"/>
+<path d="M98 74 L58 80 L16 78 Q14 74 18 72 L60 72 Z" fill="#b7bec5"/><path d="M16 72 L60 72" stroke="#e6eaee" stroke-width="1.2"/>
+<rect x="84" y="58" width="36" height="26" rx="5" fill="#25292e"/><path d="M88 64h28M88 70h28M88 76h28" stroke="#3a4047" stroke-width="2"/>
+<path d="M44 54 L64 50 L70 62 L50 66 Z" fill="${c2}"/><path d="M60 48 Q78 40 102 44 L104 52 Q82 54 64 56 Z" fill="#141518"/>
+<path d="M98 46 Q112 30 140 32 L152 40 Q144 54 120 56 L100 56 Z" fill="${c}"/><path d="M104 44 Q116 36 138 37" stroke="#fff" stroke-opacity=".35" stroke-width="2" fill="none" stroke-linecap="round"/>
+<path d="M70 58 L100 56 L96 66 L74 68 Z" fill="${c2}"/><path d="M150 40 L172 84" stroke="#c9d0d6" stroke-width="5" stroke-linecap="round"/>
+<path d="M146 34 L152 22 M142 22 L160 20" stroke="#2c3036" stroke-width="3.5" stroke-linecap="round"/><circle cx="162" cy="40" r="7.5" fill="#e9edf0" stroke="#2c3036" stroke-width="2"/><circle cx="162" cy="40" r="3.5" fill="#fff8e6"/>
+<path d="M18 62 h6" stroke="#ff4d3d" stroke-width="3" stroke-linecap="round"/></svg>`;}
+const dayStr=t=>t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");
+function daysBack(n){const out=[];const t=new Date();for(let i=n-1;i>=0;i--){const d=new Date(t);d.setDate(t.getDate()-i);out.push(dayStr(d));}return out;}
+function spark(vals,col){const w=96,h=34;const mn=Math.min(...vals),mx=Math.max(...vals);if(!(mx>mn))return"";const pts=vals.map((v,i)=>[i*(w/(vals.length-1)),h-3-(v-mn)/(mx-mn)*(h-8)]);const l=pts.map((p,i)=>(i?"L":"M")+p[0].toFixed(1)+","+p[1].toFixed(1)).join("");const id="sg"+col.replace(/[^a-z0-9]/gi,"");
+  return `<svg class="sp" viewBox="0 0 ${w} ${h}" aria-hidden="true"><defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity=".28"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${l}L${w},${h}L0,${h}Z" fill="url(#${id})"/><path d="${l}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/><circle cx="${(pts.at(-1)[0]-2).toFixed(1)}" cy="${pts.at(-1)[1].toFixed(1)}" r="3" fill="${col}"/></svg>`;}
+const pct=(a,b)=>b>0?Math.round((a-b)/b*1000)/10:null;
+function niceStep(v){if(v<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(v)));for(const m of [1,1.5,2,2.5,3,4,5,6,8,10])if(m*p>=v)return m*p;return 10*p;}
+function niceMax(v){return niceStep(v/4)*4;}
+const short=v=>v>=1e7?(Math.round(v/1e6)/10)+"Cr":v>=1e5?(Math.round(v/1e4)/10)+"L":v>=1e3?Math.round(v/1e3)+"k":String(Math.round(v));
+function salesChart(){
+  const now=new Date(),months=[];for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);months.push(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"));}
+  const val=m=>sum(S.invoices.filter(i=>(i.date||"").startsWith(m)),i=>i.total);
+  const v=months.map(val),tot=sum(v,x=>x);
+  const prev=[];for(let i=23;i>=12;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);prev.push(val(d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")));}
+  const ptot=sum(prev,x=>x),ch=pct(tot,ptot);
+  const W=860,H=270,L=52,R=8,T=34,B=28,iw=W-L-R,ih=H-T-B,max=niceMax(Math.max(...v)),bw=iw/12;let s="";
+  for(let k=0;k<=4;k++){const t=max*k/4,y=T+ih-t/max*ih;s+=`<line class="gl" x1="${L}" x2="${W-R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}"/><text class="tk" x="${L-10}" y="${(y+4).toFixed(1)}" text-anchor="end">${short(t)}</text>`;}
+  v.forEach((x,i)=>{const h=x/max*ih,xx=L+i*bw+bw*.22,w=bw*.56,y=T+ih-h,on=i===11,mn=new Date(months[i]+"-01T00:00").toLocaleString("en-GB",{month:"short"});
+    if(h>0.5){const rr=Math.min(4,h);s+=`<path class="bar ${on?"on":""}" d="M${xx.toFixed(1)},${T+ih} V${(y+rr).toFixed(1)} Q${xx.toFixed(1)},${y.toFixed(1)} ${(xx+rr).toFixed(1)},${y.toFixed(1)} H${(xx+w-rr).toFixed(1)} Q${(xx+w).toFixed(1)},${y.toFixed(1)} ${(xx+w).toFixed(1)},${(y+rr).toFixed(1)} V${T+ih} Z"><title>${mn}: Rs ${fmtN(x)}</title></path>`;}
+    s+=`<rect x="${(L+i*bw).toFixed(1)}" y="${T}" width="${bw.toFixed(1)}" height="${ih}" fill="transparent"><title>${mn}: Rs ${fmtN(x)}</title></rect>`;
+    s+=`<text class="ml ${on?"on":""}" x="${(xx+w/2).toFixed(1)}" y="${H-8}" text-anchor="middle">${mn}</text>`;
+    if(on&&x>0){const tw=Math.max(70,("Rs "+short(x)).length*8+16);s+=`<rect class="vb" x="${(xx+w/2-tw/2).toFixed(1)}" y="${(y-32).toFixed(1)}" width="${tw}" height="24" rx="7"/><text class="vt" x="${(xx+w/2).toFixed(1)}" y="${(y-15.5).toFixed(1)}" text-anchor="middle">Rs ${short(x)}</text>`;}});
+  return {svg:`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Monthly sales including tax for the last 12 months">${s}</svg>`,tot,ch,months,v};
+}
+function dueList(){
+  const t=today(),lim=(()=>{const d=new Date();d.setDate(d.getDate()+7);return dayStr(d);})(),rows=[];
+  S.invoices.forEach(inv=>{const sc=schedule(inv);if(!sc)return;sc.rows.forEach(r=>{if(r.status!=="paid"&&r.due<=lim)rows.push({inv,r,left:r2(r.amt-r.got),months:sc.rows.length});});});
+  rows.sort((a,b)=>a.r.due.localeCompare(b.r.due));
+  return rows.map(x=>{const d=Math.round((new Date(t+"T00:00")-new Date(x.r.due+"T00:00"))/864e5);
+    const chip=d>0?`<span class="chip dn">Overdue ${d} day${d===1?"":"s"}</span>`:d===0?`<span class="chip am">Due today</span>`:d===-1?`<span class="chip am">Due tomorrow</span>`:`<span class="chip mu">Due ${fmtD(x.r.due).slice(0,6)}</span>`;
+    return Object.assign(x,{days:d,chip});});
+}
+function greeting(){const h=new Date().getHours();const part=h<12?"Good morning":h<17?"Good afternoon":"Good evening";
+  const n=(me&&me.user_metadata&&(me.user_metadata.full_name||me.user_metadata.name))||"";return part+(n?", "+n.split(" ")[0]:"");}
 function vOverview(){
-  const total=S.bikes.length,inStock=S.bikes.filter(b=>b.status!=="sold").length;
-  const soldD=sum(S.invoices.filter(i=>i.partyType==="dealer"),i=>(i.items||[]).length);
-  const soldC=sum(S.invoices.filter(i=>i.partyType!=="dealer"),i=>(i.items||[]).length);
+  const t=today(),days=daysBack(8),yest=days[6];
+  const dayTotal=d=>sum(S.invoices.filter(i=>i.date===d),i=>i.total);
+  const salesT=dayTotal(t),salesY=dayTotal(yest),chT=pct(salesT,salesY);
+  const inStock=S.bikes.filter(b=>b.status!=="sold");const models=[...new Set(inStock.map(b=>b.model||"—"))];
+  const stockAt=d=>S.bikes.filter(b=>(b.receivedDate||"")<=d&&!(b.status==="sold"&&(b.soldDate||"")<=d)).length;
+  const pendAt=d=>sum(S.invoices.filter(i=>i.date<=d),i=>i.total)-sum(S.payments.filter(p=>p.date<=d),p=>p.amount);
   const sales=sum(S.invoices,i=>i.total),recv=sum(S.payments,p=>p.amount),pend=r2(sales-recv);
-  const m=today().slice(0,7);const mInv=S.invoices.filter(i=>(i.date||"").startsWith(m));
-  const overdue=[];S.invoices.forEach(i=>{const sc=schedule(i);if(sc)sc.rows.filter(r=>r.status==="overdue").forEach(r=>overdue.push({i,r}));});
-  const odAmt=sum(overdue,x=>x.r.amt-x.r.got);
   const owing=S.parties.map(p=>Object.assign({p},partyStats(p.id))).filter(x=>x.bal>0.01).sort((a,b)=>b.bal-a.bal);
-  const byModel={};S.bikes.filter(b=>b.status!=="sold").forEach(b=>{const k=b.model||"—";byModel[k]=(byModel[k]||0)+1;});
-  const models=Object.entries(byModel).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));const maxM=Math.max(1,...models.map(x=>x[1]));
-  const recent=[...S.invoices].sort((a,b)=>(b.date+b.no).localeCompare(a.date+a.no)).slice(0,6);
-  const monthName=new Date().toLocaleString("en-GB",{month:"long",year:"numeric"});
+  const m=t.slice(0,7),mInv=S.invoices.filter(i=>(i.date||"").startsWith(m)),g=grossOf(mInv);
+  const gpTo=d=>grossOf(mInv.filter(i=>i.date<=d)).gp;
+  const dues=dueList(),overdue=dues.filter(x=>x.days>0);
   const st=settings();
   const start=(!st.ntn||!S.bikes.length||!S.parties.length)&&!S.invoices.length;
+  // top seller this month
+  const sold={};mInv.forEach(i=>(i.items||[]).forEach(it=>{const k=it.model||"—";(sold[k]=sold[k]||[]).push({it,inv:i});}));
+  const top=Object.entries(sold).sort((a,b)=>b[1].length-a[1].length)[0];
+  let topHtml;
+  if(top){const [model,list]=top,left=inStock.filter(b=>b.model===model);
+    const cols=[...new Set(S.bikes.filter(b=>b.model===model).map(b=>b.colour).filter(Boolean))];
+    const price=lastPriceByModel()[model]||0;
+    const margins=list.map(x=>{const b=bike(x.it.bikeId);return b&&num(b.cost)?num(x.it.price)-num(b.cost):null;}).filter(x=>x!==null);
+    const daysIn=list.map(x=>{const b=bike(x.it.bikeId);return b&&b.receivedDate?Math.max(0,Math.round((new Date(x.inv.date+"T00:00")-new Date(b.receivedDate+"T00:00"))/864e5)):null;}).filter(x=>x!==null);
+    const onInst=list.filter(x=>x.inv.plan==="instalment").length;
+    topHtml=`<section class="panel topseller">${secH("Top seller this month",`${list.length} sold in ${new Date().toLocaleString("en-GB",{month:"long"})} · ${left.length} left in stock`,left.length<=2?`<span class="chip am">${left.length?"Restock soon":"Out of stock"}</span>`:"")}
+      <div class="ts-bike">${motoSvg(cols[0]||"")}</div>
+      <div class="ts-meta"><div><b class="n">${esc(model)}</b><div class="sw">${cols.slice(0,4).map(c=>`<i style="background:${colourHex(c)}" title="${esc(c)}"></i>`).join("")}<span>${cols.length?esc(cols.join(", ")):""}</span></div></div>
+        <div class="ts-price">${price?"Rs "+fmtN(price):"—"}<small>last sale price before tax</small></div></div>
+      <dl class="st3"><div><dt>Margin / bike</dt><dd>${margins.length?"Rs "+fmtN(sum(margins,x=>x)/margins.length):"—"}</dd></div><div><dt>Avg. days in stock</dt><dd>${daysIn.length?Math.round(sum(daysIn,x=>x)/daysIn.length):"—"}</dd></div><div><dt>On instalments</dt><dd>${onInst} of ${list.length}</dd></div></dl></section>`;}
+  else topHtml=`<section class="panel topseller">${secH("Top seller this month","")}${emptyBox("stock","No sales yet this month","Your best-selling model will appear here.",`<button class="btn sm primary" data-act="newSale">${ic("plus")}New sale</button>`)}</section>`;
+  // stock by model cards
+  const lp=lastPriceByModel();
+  const cards=models.map(mod=>{const bs=inStock.filter(b=>(b.model||"—")===mod);const cost=sum(bs,b=>b.cost)/bs.length;const cols=bs.map(b=>b.colour).filter(Boolean);const colour=cols.sort((a,b)=>cols.filter(x=>x===b).length-cols.filter(x=>x===a).length)[0]||"";const price=lp[mod]||0;
+    return{mod,n:bs.length,cost,colour,price};}).sort((a,b)=>b.n-a.n||a.mod.localeCompare(b.mod));
+  const ch=salesChart();
+  const monthName=new Date().toLocaleString("en-GB",{month:"long"});
+  const todayInv=S.invoices.filter(i=>i.date===t),todayPay=S.payments.filter(p=>p.date===t),gT=grossOf(todayInv);
+  const recent=[...S.invoices].sort((a,b)=>(b.date+(b.createdAt||"")).localeCompare(a.date+(a.createdAt||""))).slice(0,5);
   return `<div class="stack-lg">
+  <div class="greet"><div><h2>${esc(greeting())}</h2><p class="sub">${new Date().toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"})} · here's how ${esc(st.name||"the showroom")} is doing today</p></div></div>
+  <div class="hero-m"><div class="l">Today's sales</div><div class="v"><small>Rs</small>${fmtN(salesT)}</div><dl class="r"><div><dt>Bikes sold</dt><dd>${sum(todayInv,i=>(i.items||[]).length)}</dd></div><div><dt>Cash in</dt><dd>${fmtN(sum(todayPay,p=>p.amount))}</dd></div><div><dt>Gross profit</dt><dd>${fmtN(gT.gp)}</dd></div></dl></div>
+  <div class="qa"><button data-act="newSale">${ic("plus")}New sale</button><button data-go="stock">${ic("stock")}Add stock</button><button data-go="payments">${ic("payments")}Payment</button><button data-act="openSearch">${ic("search")}Find bike</button></div>
   ${start?`<section class="panel">${secH("Get started","Three steps to your first invoice.")}
     <ol class="steps">
       <li><span>1</span><div><b>Add your business details</b><p>Name, address, NTN and STRN print on every invoice.</p><button class="btn sm" data-go="settings">Open settings</button></div></li>
       <li><span>2</span><div><b>Receive bikes from the factory</b><p>Enter engine and chassis numbers, one bike per line.</p><button class="btn sm" data-go="stock">Add stock</button></div></li>
-      <li><span>3</span><div><b>Add a dealer or customer</b><p>Then create the invoice under Sales &amp; invoices.</p><button class="btn sm" data-go="parties">Add contact</button></div></li>
+      <li><span>3</span><div><b>Add a dealer or customer</b><p>Then record the sale under Sales &amp; invoices.</p><button class="btn sm" data-go="parties">Add contact</button></div></li>
     </ol></section>`:""}
-  <section><h3 class="grp">Stock</h3><div class="kpis">
-    ${kpi("Received from factory",total,"stock")}
-    ${kpi("In stock now",inStock,"stock",{tone:"acc",sub:models.length?models.length+" model"+(models.length>1?"s":""):""})}
-    ${kpi("Given to dealers",soldD,"parties")}
-    ${kpi("Sold to customers",soldC,"sales")}
-  </div></section>
-  <section><h3 class="grp">Money</h3><div class="kpis">
-    ${kpi("Total sales",fmtN(sales),"sales",{unit:"Rs",sub:S.invoices.length+" invoice"+(S.invoices.length===1?"":"s")})}
-    ${kpi("Received",fmtN(recv),"payments",{unit:"Rs",tone:"ok",sub:S.payments.length+" payment"+(S.payments.length===1?"":"s")})}
-    ${kpi("Pending",fmtN(pend),"alert",{unit:"Rs",tone:pend>0.01?"bad":"",sub:owing.length?owing.length+" owe"+(owing.length===1?"s":"")+" money":"Nobody owes money"})}
-    ${(()=>{const g=grossOf(mInv);return kpi("Gross profit · this month",fmtN(g.gp),"reports",{unit:"Rs",tone:g.gp<0?"bad":"acc",sub:"Sales before tax − bike cost; before expenses"});})()}
-    ${kpi("Overdue instalments",overdue.length,"instal",{tone:overdue.length?"bad":"",sub:overdue.length?"Rs "+fmtN(odAmt)+" overdue":"All instalments on time"})}
-  </div></section>
-  <div class="grid2">
-    <section class="panel">${secH("Who owes money",owing.length?owing.length+" with a pending balance":"",owing.length?`<button class="btn sm" data-go="parties">View all</button>`:"")}
-      ${owing.length?`<div class="tablebox flush"><table><thead><tr><th>Name</th><th>Type</th><th class="n">Bikes</th><th class="n">Pending (Rs)</th></tr></thead><tbody>
-      ${owing.slice(0,8).map(x=>`<tr class="click" data-party="${x.p.id}" tabindex="0"><td class="strong">${esc(x.p.name)}</td><td>${typePill(x.p.type)}</td><td class="n">${x.bikes}</td><td class="n">${fmtN(x.bal)}</td></tr>`).join("")}
-      </tbody></table></div>`:emptyBox("check","No pending money","Balances appear here once you make invoices.")}
-    </section>
-    <section class="panel">${secH("Stock by model",inStock+" bike"+(inStock===1?"":"s")+" in stock")}
-      ${models.length?`<ul class="bars">${models.slice(0,8).map(([k,v])=>`<li><span class="bars-l" title="${esc(k)}">${esc(k)}</span><span class="bars-t"><span style="width:${Math.max(4,v/maxM*100)}%"></span></span><b>${v}</b></li>`).join("")}</ul>`
+  <div class="kpis ovk">
+    <div class="kpi"><div class="kpi-top"><span class="kpi-l">Today's sales</span></div><div class="kpi-v"><small>Rs</small>${fmtN(salesT)}</div><div class="kpi-s">${chT!==null?`<span class="chip ${chT>=0?"up":"dn"}">${chT>=0?"+":""}${chT}%</span>vs yesterday`:`${todayInv.length} invoice${todayInv.length===1?"":"s"} today`}</div>${spark(days.map(dayTotal),"#f5a524")}</div>
+    <div class="kpi"><div class="kpi-top"><span class="kpi-l">Bikes in stock</span></div><div class="kpi-v">${inStock.length}</div><div class="kpi-s">${(()=>{const low=cards.filter(c=>c.n<=2).length;return (low?`<span class="chip am">${low} low</span>`:"")+`${models.length} model${models.length===1?"":"s"} · ${S.bikes.length} received`;})()}</div>${spark(days.map(stockAt),"#9aa3ad")}</div>
+    <div class="kpi ${pend>0.01?"bad":""}"><div class="kpi-top"><span class="kpi-l">Money pending</span></div><div class="kpi-v"><small>Rs</small>${fmtN(pend)}</div><div class="kpi-s">${owing.length?`<span class="chip dn">${owing.length} owe</span>`:""}${overdue.length?`${overdue.length} instalment${overdue.length===1?"":"s"} overdue`:"no overdue instalments"}</div>${spark(days.map(pendAt),"#ff6b5b")}</div>
+    <div class="kpi"><div class="kpi-top"><span class="kpi-l">Gross profit · ${esc(monthName)}</span></div><div class="kpi-v"><small>Rs</small>${fmtN(g.gp)}</div><div class="kpi-s">before expenses${g.noCost?` · <span class="chip am">${g.noCost} without cost</span>`:""}</div>${spark(days.map(gpTo),"#3dd68c")}</div>
+  </div>
+  <div class="ov2">
+    <section class="panel chart">${secH("Sales overview","Monthly sales including tax · last 12 months",`<button class="btn sm" data-go="reports">Reports</button>`)}
+      <div class="bigv"><b>Rs ${fmtN(ch.tot)}</b>${ch.ch!==null?`<span class="chip ${ch.ch>=0?"up":"dn"}">${ch.ch>=0?"+":""}${ch.ch}% vs previous 12 months</span>`:`<span class="sub">last 12 months</span>`}</div>
+      ${ch.tot>0?ch.svg:emptyBox("reports","No sales yet","Monthly sales appear here once you make invoices.")}</section>
+    ${topHtml}
+  </div>
+  <div class="ov2">
+    <section class="panel">${secH("Inventory",`${inStock.length} in stock · ${models.length} model${models.length===1?"":"s"} · Rs ${fmtN(sum(inStock,b=>b.cost))} at cost`,`<button class="btn sm" data-go="stock">All stock</button>`)}
+      ${cards.length?`<div class="invg">${cards.slice(0,8).map(c=>`<button type="button" class="bc" data-model="${esc(c.mod)}"><div class="img">${motoSvg(c.colour)}</div><b>${esc(c.mod)}</b><div class="r"><span class="p">${c.price?"Rs "+fmtN(c.price):"No sale yet"}</span><span class="chip ${c.n<=2?"am":"up"}">${c.n} in stock</span></div><div class="m2"><span>Avg. cost Rs ${fmtN(c.cost)}</span>${c.price&&c.cost?`<span>Margin <b>${fmtN(c.price-c.cost)}</b></span>`:""}</div></button>`).join("")}</div>`
         :emptyBox("stock","No bikes in stock","Add the bikes you receive from the factory.",`<button class="btn sm primary" data-go="stock">${ic("plus")}Add stock</button>`)}
-      <div class="month"><h3>This month · ${esc(monthName)}</h3>
-        <dl class="mstats"><div><dt>Invoices</dt><dd>${mInv.length}</dd></div><div><dt>Bikes sold</dt><dd>${sum(mInv,i=>(i.items||[]).length)}</dd></div><div><dt>Sales (Rs)</dt><dd>${fmtN(sum(mInv,i=>i.total))}</dd></div><div><dt>Sales tax (Rs)</dt><dd>${fmtN(sum(mInv,i=>num(i.tax)+num(i.furtherTax)))}</dd></div></dl></div>
+    </section>
+    <section class="panel">${secH("Instalments due",dues.length?`Overdue and next 7 days · Rs ${fmtN(sum(dues,x=>x.left))}`:"Overdue and next 7 days",overdue.length?`<span class="chip dn">${overdue.length} overdue</span>`:"")}
+      ${dues.length?`<div class="lst">${dues.slice(0,6).map(x=>`<div class="li" data-inv="${x.inv.id}" tabindex="0"><div class="a">${esc((x.inv.partyName||"?").split(" ").map(w=>w[0]).join("").slice(0,2))}</div><div><b>${esc(x.inv.partyName)}</b><span class="s">${esc(x.inv.no)} · month ${x.r.n} of ${x.months}</span></div><div class="amt">Rs ${fmtN(x.left)}${x.chip}</div></div>`).join("")}</div>`
+        :emptyBox("check","Nothing due this week","Instalments due in the next 7 days and any overdue ones appear here.")}
     </section>
   </div>
-  <section class="panel">${secH("Recent invoices","",S.invoices.length?`<button class="btn sm" data-go="sales">All invoices</button>`:"")}
-    ${recent.length?invTable(recent):emptyBox("sales","No invoices yet","Add stock and a dealer or customer, then create your first invoice.",`<button class="btn sm primary" data-go="sales">${ic("plus")}New invoice</button>`)}
+  <section class="panel">${secH("Recent sales","",S.invoices.length?`<button class="btn sm" data-go="sales">All invoices</button>`:"")}
+    ${recent.length?`<div class="lst">${recent.map(i=>`<div class="li" data-inv="${i.id}" tabindex="0"><div class="a">${esc((i.partyName||"?").split(" ").map(w=>w[0]).join("").slice(0,2))}</div><div><b>${esc(i.partyName)}</b><span class="s">${esc(i.no)} · ${fmtD(i.date)} · ${(i.items||[]).map(x=>esc(x.model)).join(", ")}</span></div><div class="amt">Rs ${fmtN(i.total)}${statusPill(i)}</div></div>`).join("")}</div>`
+      :emptyBox("sales","No sales yet","Add stock and a dealer or customer, then record your first sale.",`<button class="btn sm primary" data-act="newSale">${ic("plus")}New sale</button>`)}
   </section></div>`;
 }
 
@@ -1367,6 +1495,7 @@ const A={
   printMonthly(){printDoc(reportDoc("monthly"));},
   repDay(el){const d=+el.dataset.delta;if(!d)ui.repDate=today();else{const t=new Date(ui.repDate+"T12:00");t.setDate(t.getDate()+d);ui.repDate=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");}render();},
   openSearch(){openSearch();},
+  newSale(){closeModal();go("sales");setTimeout(()=>{const t=document.getElementById("invParty");if(t){t.scrollIntoView({block:"center"});t.focus({preventScroll:true});}},60);},
   editBike(el){editBike(el.dataset.id);},
   editParty(el){editParty(el.dataset.id);},
   async saveBike(){const id=editing&&editing.id,b=bike(id);if(!b)return;const er=$("#ebErr");er.hidden=true;
@@ -1442,6 +1571,7 @@ document.addEventListener("click",e=>{
   const g=t.closest("[data-go]");if(g){closeModal();openInvId=openPartyId=null;go(g.dataset.go);return;}
   const pc=t.closest("[data-pal]");if(pc){pickPal(+pc.dataset.pal);return;}
   if(t.matches("[data-palclose]")){closeSearch();return;}
+  const md=t.closest("[data-model]");if(md){ui.stockQ=md.dataset.model;ui.stockFilter="in_stock";go("stock");return;}
   const rd=t.closest("[data-repday]");if(rd){ui.repDate=rd.dataset.repday;render();window.scrollTo(0,0);return;}
   const cl=t.closest("[data-close]");if(cl&&(cl===t||cl.tagName==="BUTTON")){closeModal();openInvId=openPartyId=null;editing=null;return;}
   const a=t.closest("[data-act]");if(a){e.preventDefault();if(a.disabled)return;const fn=A[a.dataset.act];if(!fn)return;const r=fn(a);
