@@ -26,9 +26,32 @@ Online software for motorcycle showrooms: stock received from the factory, bikes
 3. Settings → fill business name, NTN, STRN, tax rate. Add staff under **Team**.
 
 ## Using the app
-- **Sign-in screens:** sign in, create account (with email confirmation), forgot password and set a new password. Errors are shown next to the field that needs fixing.
+- **Sign-in screens:** Continue with Google, sign in, create account (with email confirmation), forgot password and set a new password. Errors are shown next to the field that needs fixing.
 - **Sections (left menu, or the menu button on phones):** Overview, Stock, Sales & invoices, Payments, Dealers & customers, Instalments, FBR / Tax, Settings.
 - Deleting a bike, payment, invoice, contact or team member always asks for confirmation, and only the owner can do it.
+
+## Google sign-in (setup)
+The app has a **Continue with Google** button. It works once Google is enabled in Supabase:
+
+1. **Google Cloud Console** (console.cloud.google.com) → create or select a project.
+2. **Google Auth Platform / OAuth consent screen:** User type *External*; app name *Bike Showroom Manager*; your support email; add `supabase.co` and `github.io` under authorized domains if asked; scopes `openid`, `email`, `profile`. Publish the app (in *Testing* mode only listed test users can sign in).
+3. **Clients / Credentials → Create OAuth client ID → Web application**
+   - Authorized JavaScript origins: `https://iskillali320-netizen.github.io`
+   - Authorized redirect URIs: `https://jebszemeaycpkwzgznov.supabase.co/auth/v1/callback`
+   - Copy the **Client ID** and **Client secret**.
+4. **Supabase → Authentication → Sign In / Providers → Google:** turn it on, paste the Client ID and Client secret, save. The client secret stays in Supabase; never put it in this repository.
+5. **Supabase → Authentication → URL Configuration:** Site URL `https://iskillali320-netizen.github.io/bike-showroom-manager/`, and add the same address under Redirect URLs.
+
+A Google account with the same email as an existing email/password account signs in to that same account.
+
+## Emails and staff invitations (setup)
+Supabase's built-in email service only delivers to members of your Supabase project team and only a few emails per hour. Confirmation, password-reset and invitation emails to anyone else fail with "Email address not authorized". For real use:
+
+1. **Supabase → Authentication → Emails → SMTP Settings:** enable custom SMTP with an email provider (for example Brevo, Resend, SendGrid or Amazon SES), using a sender address on a domain you control.
+2. **Authentication → Emails → Templates:** optionally edit *Magic Link* and *Confirm signup* (these are what invited staff receive) to say "You've been invited to Bike Showroom Manager".
+3. **Authentication → Rate Limits:** raise the email limit if you invite many people.
+
+How invitations work: the owner adds an email under **Settings → Team**. The app saves the invitation and emails that address a sign-in link. When the person opens it (or signs up, or uses Google with the same address), the database adds them to that showroom only. This happens only if a matching, unexpired invitation exists and the email is confirmed. Invitations expire after 14 days; the owner can resend or renew them. Staff can set a password later under **Settings → Your account**.
 
 ## Adding a new showroom (customer)
 Each customer opens the same website, creates an account and creates their own showroom. Their data is separate from everyone else's.

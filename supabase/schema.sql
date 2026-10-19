@@ -35,6 +35,9 @@ create table if not exists public.invites (
   created_at timestamptz not null default now(),
   unique (showroom_id, email)
 );
+-- Invitations expire after 14 days unless the owner resends them (added later; safe on existing data).
+alter table public.invites add column if not exists expires_at timestamptz not null default (now() + interval '14 days');
+alter table public.invites add column if not exists invited_by uuid;
 
 create table if not exists public.parties (
   id uuid primary key default gen_random_uuid(),
@@ -175,6 +178,9 @@ declare sid uuid;
 begin
   if auth.uid() is null then raise exception 'Please sign in first'; end if;
   if coalesce(trim(p_name),'') = '' then raise exception 'Enter the showroom name'; end if;
+  if exists (select 1 from members where user_id = auth.uid() and role = 'owner') then
+    raise exception 'You already own a showroom';
+  end if;
   insert into showrooms(name) values (trim(p_name)) returning id into sid;
   insert into members(showroom_id, user_id, email, role) values (sid, auth.uid(), coalesce(auth.jwt()->>'email',''), 'owner');
   return sid;
@@ -190,11 +196,42 @@ begin
   select lower(email) into my_email from auth.users where id = auth.uid() and email_confirmed_at is not null;
   if coalesce(my_email,'') = '' then return 0; end if;
   insert into members(showroom_id, user_id, email, role)
-    select showroom_id, auth.uid(), my_email, role from invites where lower(email) = my_email
+    select showroom_id, auth.uid(), my_email, role from invites where lower(email) = my_email and expires_at > now()
     on conflict (showroom_id, user_id) do nothing;
   get diagnostics n = row_count;
-  delete from invites where lower(email) = my_email;
+  delete from invites where lower(email) = my_email and expires_at > now();
   return n;
+end $$;
+
+-- Accepts every valid invitation for the signed-in user's confirmed email (password, email link or Google)
+-- and reports which showrooms were joined and which invitations have expired.
+create or replace function public.accept_my_invites() returns jsonb
+language plpgsql security definer set search_path = public as $$
+declare my_email text; joined jsonb; expired jsonb;
+begin
+  if auth.uid() is null then
+    return jsonb_build_object('confirmed', false, 'joined', '[]'::jsonb, 'expired', '[]'::jsonb);
+  end if;
+  select lower(email) into my_email from auth.users where id = auth.uid() and email_confirmed_at is not null;
+  if coalesce(my_email, '') = '' then
+    return jsonb_build_object('confirmed', false, 'joined', '[]'::jsonb, 'expired', '[]'::jsonb);
+  end if;
+  with ins as (
+    insert into members(showroom_id, user_id, email, role)
+    select i.showroom_id, auth.uid(), my_email, i.role from invites i
+    where lower(i.email) = my_email and i.expires_at > now()
+    on conflict (showroom_id, user_id) do nothing
+    returning showroom_id, role
+  )
+  select coalesce(jsonb_agg(jsonb_build_object('showroom_id', ins.showroom_id, 'name', s.name, 'role', ins.role)), '[]'::jsonb)
+    into joined from ins join showrooms s on s.id = ins.showroom_id;
+  delete from invites where lower(email) = my_email and expires_at > now();
+  select coalesce(jsonb_agg(jsonb_build_object('name', s.name, 'expired_at', i.expires_at)), '[]'::jsonb)
+    into expired
+    from invites i join showrooms s on s.id = i.showroom_id
+   where lower(i.email) = my_email and i.expires_at <= now()
+     and not exists (select 1 from members m where m.showroom_id = i.showroom_id and m.user_id = auth.uid());
+  return jsonb_build_object('confirmed', true, 'joined', joined, 'expired', expired);
 end $$;
 
 -- Creates an invoice with the next number, marks its bikes sold and records money received, all in one step.
@@ -247,8 +284,8 @@ begin
   delete from invoices where id = p_id;
 end $$;
 
-revoke all on function public.create_showroom(text), public.accept_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) from public, anon;
-grant execute on function public.create_showroom(text), public.accept_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) to authenticated;
+revoke all on function public.create_showroom(text), public.accept_invites(), public.accept_my_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) from public, anon;
+grant execute on function public.create_showroom(text), public.accept_invites(), public.accept_my_invites(), public.create_invoice(jsonb, jsonb), public.delete_invoice(uuid) to authenticated;
 grant execute on function public.is_member(uuid), public.is_owner(uuid) to authenticated;
 
 -- ---------- Hardening ----------
@@ -282,6 +319,7 @@ grant select on public.showrooms to authenticated;
 grant update (name, address, phone, ntn, strn, tax_rate, prefix) on public.showrooms to authenticated;
 grant select, delete on public.members to authenticated;
 grant select, insert, delete on public.invites to authenticated;
+grant update (expires_at) on public.invites to authenticated;  -- "Resend invite" renews the expiry (owners only, by RLS)
 grant select, insert, update, delete on public.parties, public.bikes, public.payments to authenticated;
 -- Invoices are created/deleted only by the functions; in the app only the FBR number and notes can be edited.
 grant select on public.invoices to authenticated;
