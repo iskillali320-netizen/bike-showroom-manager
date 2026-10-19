@@ -27,7 +27,11 @@ Online software for motorcycle showrooms: stock received from the factory, bikes
 
 ## Using the app
 - **Sign-in screens:** Continue with Google, sign in, create account (with email confirmation), forgot password and set a new password. Errors are shown next to the field that needs fixing.
-- **Sections (left menu, or the menu button on phones):** Overview, Stock, Sales & invoices, Payments, Dealers & customers, Instalments, FBR / Tax, Settings.
+- **Sections (left menu, or the menu button on phones):** Overview, Stock, Sales & invoices, Payments, Dealers & customers, Instalments, Reports, FBR / Tax, Settings.
+- **Search everything:** press Ctrl+K (or the Search button) and type a chassis/engine number, invoice number, name, phone or CNIC.
+- **Print:** invoices (with amount in words), payment receipts, customer statements and daily/monthly summaries.
+- **Reports:** daily summary and monthly day-by-day totals. *Gross profit* = sales before tax − purchase cost of bikes sold; expenses are not recorded yet, so it is not net profit.
+- **Edit:** bikes (sold bikes: only cost and challan) and contacts (old invoices keep the details they were printed with).
 - Deleting a bike, payment, invoice, contact or team member always asks for confirmation, and only the owner can do it.
 
 ## Google sign-in (setup)

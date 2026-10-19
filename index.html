@@ -301,6 +301,7 @@ tbody tr:hover td{background:color-mix(in srgb,var(--sunk) 60%,transparent)}
 td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
 th.n{font-family:var(--body)}
 td.act{text-align:right;white-space:nowrap;width:1%}
+tbody td:first-child,tfoot td:first-child{white-space:nowrap}
 td.strong{font-weight:600}
 tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line);border-bottom:0;position:sticky;bottom:0}
 .empty{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:28px 16px;color:var(--muted)}
@@ -344,8 +345,30 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
 .dialog p{color:var(--muted)}
 .dlg-act{display:flex;justify-content:flex-end;gap:8px;margin-top:10px;flex-wrap:wrap}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
+.tb-search{display:inline-flex;align-items:center;gap:8px;min-width:220px;justify-content:flex-start;color:var(--muted);font-weight:500}
+.tb-search kbd,.pal-in kbd{margin-left:auto;font:600 11px var(--mono);border:1px solid var(--line-strong);border-radius:4px;padding:1px 5px;color:var(--faint)}
+@media (max-width:900px){.tb-search{min-width:0;padding:9px 10px}.tb-search .lbl,.tb-search kbd{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}}
+.pal-bg{z-index:85;align-items:flex-start}
+.pal{background:var(--surface);border:1px solid var(--line);border-radius:14px;width:min(640px,100%);box-shadow:var(--shadow-lg);overflow:hidden;margin-top:6vh}
+.pal-in{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.pal-in input{border:0;box-shadow:none!important;padding:6px 0;font-size:15.5px;background:transparent}
+.pal-list{max-height:60vh;overflow:auto;padding:6px}
+.pal-g{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;padding:10px 10px 4px}
+.pal-i{display:flex;flex-direction:column;align-items:flex-start;gap:1px;width:100%;text-align:left;border:0;background:none;padding:8px 10px;border-radius:var(--r-sm);cursor:pointer;color:var(--fg);font:14px var(--body)}
+.pal-i span{font-size:12.5px;color:var(--muted)}
+.pal-i[aria-selected="true"],.pal-i:hover{background:var(--accent-soft)}
+.pal-empty{padding:18px 12px;color:var(--muted);font-size:13.5px}
+.pick .last{display:block;font-size:11.5px;color:var(--faint)}
+#printArea{display:none}
+@media print{
+  body>*:not(#printArea),body::before{display:none!important}
+  #printArea{display:block!important}
+  html,body{background:#fff!important;height:auto}
+  @page{size:A4;margin:12mm}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation-duration:.01ms!important}}
 </style>
+<style id="docCss"></style>
 </head>
 <body>
 
@@ -392,7 +415,7 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
     <header class="topbar">
       <button class="iconbtn menu" data-act="openNav" aria-label="Open menu" aria-controls="side" aria-expanded="false"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
       <div class="tb-title"><h1 id="pageTitle">Overview</h1><span class="sub" id="pageSub"></span></div>
-      <div class="tb-right"><span class="sync" id="syncState" role="status"><span class="dot"></span><span class="txt">Connecting…</span></span><span id="pageAction"></span></div>
+      <div class="tb-right"><button class="btn tb-search" data-act="openSearch" aria-label="Search (Ctrl+K)"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="lbl">Search</span><kbd>Ctrl K</kbd></button><span class="sync" id="syncState" role="status"><span class="dot"></span><span class="txt">Connecting…</span></span><span id="pageAction"></span></div>
     </header>
     <div id="banner" class="banner" hidden></div>
     <main id="view" class="content"></main>
@@ -400,15 +423,17 @@ tfoot td{font-weight:600;background:var(--sunk);border-top:1px solid var(--line)
 </div>
 <div id="modalRoot"></div>
 <div id="dialogRoot"></div>
+<div id="paletteRoot"></div>
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+<div id="printArea"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js"></script>
 <script src="config.js"></script>
 <script>
 (function(){
-const TABS=[["overview","Overview"],["stock","Stock"],["sales","Sales & invoices"],["payments","Payments"],["parties","Dealers & customers"],["instal","Instalments"],["fbr","FBR / Tax"],["settings","Settings"]];
+const TABS=[["overview","Overview"],["stock","Stock"],["sales","Sales & invoices"],["payments","Payments"],["parties","Dealers & customers"],["instal","Instalments"],["reports","Reports"],["fbr","FBR / Tax"],["settings","Settings"]];
 const S={bikes:[],parties:[],invoices:[],payments:[],settings:{}};
-let tab="overview", ready=false, ui={stockFilter:"in_stock",stockQ:"",fbrMonth:today().slice(0,7),partyFilter:"all",partyQ:"",invQ:"",invStatus:"all",payQ:""};
+let tab="overview", ready=false, ui={repDate:today(),repMonth:today().slice(0,7),stockFilter:"in_stock",stockQ:"",fbrMonth:today().slice(0,7),partyFilter:"all",partyQ:"",invQ:"",invStatus:"all",payQ:""};
 try{const t=localStorage.getItem("bsm_tab");if(t&&TABS.some(x=>x[0]===t))tab=t;}catch(e){}
 
 /* ---------- helpers ---------- */
@@ -506,6 +531,10 @@ const I={
   trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
   x:'<path d="M6 6l12 12M18 6 6 18"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  print:'<path d="M7 9V3h10v6M7 17H5a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><rect x="7" y="14" width="10" height="7" rx="1"/>',
+  reports:'<path d="M4 20V11M10 20V5M16 20v-6M21 20H3"/>',
+  edit:'<path d="M4 20h4L19 9l-4-4L4 16v4z"/><path d="m13.5 6.5 4 4"/>',
+  receipt:'<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21z"/><path d="M9 8h6M9 12h6"/>',
   store:'<path d="M3 9 4.5 4h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"/>'
 };
 const ic=(n,c="")=>`<svg class="ic ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${I[n]||""}</svg>`;
@@ -666,6 +695,7 @@ async function openShop(m){
 function setWho(){const em=me&&me.email||"";$("#whoEmail").textContent=em;$("#whoRole").textContent=isOwner()?"Owner":"Staff";$("#avatar").textContent=(em[0]||"?");}
 function setSync(okState,text){const s=$("#syncState");s.classList.toggle("off",!okState);s.querySelector(".txt").textContent=text;}
 async function start(){
+  try{$("#docCss").textContent=DOC_CSS;}catch(e){}
   const C=window.APP_CONFIG||{};
   if(!window.supabase||!C.supabaseUrl||/YOUR_/.test(C.supabaseUrl+C.supabaseAnonKey)){showAuth("setup");return;}
   const raw=location.hash.replace(/^#/,"")+"&"+location.search.replace(/^\?/,"");
@@ -690,8 +720,192 @@ async function start(){
   else showAuth("signin");
 }
 
+/* ---------- Stage 1: money helpers ---------- */
+function amountWords(v){
+  let n=Math.round(Math.abs(num(v)));if(n===0)return"Zero";
+  const a=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine","Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen","Seventeen","Eighteen","Nineteen"];
+  const t=["","","Twenty","Thirty","Forty","Fifty","Sixty","Seventy","Eighty","Ninety"];
+  const two=x=>x<20?a[x]:t[Math.floor(x/10)]+(x%10?" "+a[x%10]:"");
+  const three=x=>(x>=100?a[Math.floor(x/100)]+" Hundred"+(x%100?" ":""):"")+(x%100?two(x%100):"");
+  const out=[];const crore=Math.floor(n/1e7);n%=1e7;const lakh=Math.floor(n/1e5);n%=1e5;const th=Math.floor(n/1000);n%=1000;
+  if(crore)out.push(amountWords(crore)+" Crore");if(lakh)out.push(two(lakh)+" Lakh");if(th)out.push(two(th)+" Thousand");if(n)out.push(three(n));
+  return out.join(" ");}
+const rupeesWords=v=>"Rupees "+amountWords(v)+" Only";
+/* gross profit: sale value before tax minus purchase cost of the bikes on the invoice */
+function invCost(inv){return sum(inv.items||[],it=>{const b=bike(it.bikeId);return b?b.cost:0;});}
+function invNoCost(inv){return (inv.items||[]).filter(it=>{const b=bike(it.bikeId);return !b||!num(b.cost);}).length;}
+function grossOf(list){const rev=sum(list,i=>i.subtotal),cost=sum(list,invCost);return{rev,cost,gp:r2(rev-cost),noCost:sum(list,invNoCost)};}
+function lastPriceByModel(){const m={};[...S.invoices].sort((a,b)=>(a.date+(a.createdAt||"")).localeCompare(b.date+(b.createdAt||""))).forEach(i=>(i.items||[]).forEach(it=>{if(it.model&&num(it.price))m[it.model]=num(it.price);}));return m;}
+const inFlight=new Set();
+async function once(key,fn){if(inFlight.has(key))return;inFlight.add(key);try{return await fn();}finally{inFlight.delete(key);}}
+
+/* ---------- Stage 1: printable documents ---------- */
+const DOC_CSS=`
+.doc{font-family:"IBM Plex Sans",Arial,sans-serif;color:#111;font-size:12.5px;line-height:1.45;background:#fff}
+.doc h1{font-family:"Archivo",Arial,sans-serif;font-size:20px;margin:0}
+.doc .muted{color:#555}.doc .mono{font-family:"IBM Plex Mono",Consolas,monospace}
+.doc .hd{display:flex;justify-content:space-between;gap:16px;border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:12px}
+.doc .title{text-align:right}.doc .title b{font-family:"Archivo",Arial,sans-serif;font-size:17px;letter-spacing:.04em;display:block}
+.doc .two{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px}
+.doc .box{border:1px solid #bbb;border-radius:4px;padding:8px 10px}
+.doc .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#555;font-weight:600;margin-bottom:3px}
+.doc table{width:100%;border-collapse:collapse;margin:6px 0 10px}
+.doc th,.doc td{border:1px solid #bbb;padding:5px 7px;text-align:left;vertical-align:top}
+.doc th{background:#eee;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em}
+.doc td.n,.doc th.n{text-align:right;font-family:"IBM Plex Mono",Consolas,monospace;white-space:nowrap}
+.doc .tot{margin-left:auto;width:min(320px,100%)}.doc .tot td{border:0;border-bottom:1px solid #ddd;padding:4px 6px}
+.doc .tot tr.g td{font-weight:700;border-bottom:2px solid #111;font-size:13.5px}
+.doc .words{margin:6px 0 12px;font-weight:600}
+.doc .big{font-family:"IBM Plex Mono",Consolas,monospace;font-size:22px;font-weight:600}
+.doc .sign{display:flex;justify-content:space-between;gap:40px;margin-top:42px}.doc .sign div{flex:1;border-top:1px solid #111;padding-top:4px;text-align:center;font-size:11px;color:#555}
+.doc .foot{margin-top:18px;font-size:10px;color:#777;text-align:center}
+.doc .pagebreak{page-break-before:always}`;
+function docHead(title,no,date,extra=""){
+  const st=settings();
+  return `<div class="hd"><div><h1>${esc(st.name||"Your business name")}</h1><div class="muted">${esc([st.address,st.phone].filter(Boolean).join(" · "))}</div><div class="muted mono">${esc([st.ntn&&"NTN "+st.ntn,st.strn&&"STRN "+st.strn].filter(Boolean).join(" · "))}</div></div>
+  <div class="title"><b>${esc(title)}</b>${no?`<div class="mono">${esc(no)}</div>`:""}${date?`<div>Date: ${fmtD(date)}</div>`:""}${extra}</div></div>`;}
+function partyBox(label,name,type,p,cnic,ntn){return `<div class="box"><div class="lbl">${label}</div><b>${esc(name)}</b> (${type==="dealer"?"Dealer":"Customer"})<div class="muted">${esc([p&&p.address,p&&p.phone].filter(Boolean).join(" · "))}</div><div class="mono">${esc([cnic&&"CNIC "+cnic,ntn&&"NTN "+ntn].filter(Boolean).join(" · "))}</div></div>`;}
+function invoiceDoc(inv){
+  const p=party(inv.partyId)||{},sc=schedule(inv),rate=num(inv.taxRate)/100,frate=num(inv.furtherRate)/100;
+  const rows=(inv.items||[]).map((it,k)=>{const tx=r2(num(it.price)*(rate+frate));return `<tr><td>${k+1}</td><td>${esc(it.model)} ${esc(it.colour)}</td><td class="mono">${esc(it.engine)}</td><td class="mono">${esc(it.chassis)}</td><td class="n">${fmtN(it.price)}</td><td class="n">${fmtN(tx)}</td><td class="n">${fmtN(num(it.price)+tx)}</td></tr>`;}).join("");
+  return `<div class="doc">${docHead("SALES TAX INVOICE",inv.no,inv.date,`<div class="mono">FBR invoice no: ${esc(inv.fbrNo||"—")}</div>`)}
+  <div class="two">${partyBox("Bill to",inv.partyName,inv.partyType,p,inv.buyerCnic,inv.buyerNtn)}<div class="box"><div class="lbl">Payment</div>${inv.plan==="instalment"?`Instalments · ${num(inv.months)} months · down payment Rs ${fmtN(inv.down)}`:"Full / credit"}<div class="muted">Received so far: Rs ${fmtN(paidFor(inv))} · Balance: Rs ${fmtN(invBal(inv))}</div></div></div>
+  <table><thead><tr><th>#</th><th>Description</th><th>Engine no.</th><th>Chassis no.</th><th class="n">Value excl. tax</th><th class="n">Tax</th><th class="n">Value incl. tax</th></tr></thead><tbody>${rows}</tbody></table>
+  <table class="tot"><tbody><tr><td>Value excluding tax</td><td class="n">${fmtN(inv.subtotal)}</td></tr><tr><td>Sales tax @ ${num(inv.taxRate)}%</td><td class="n">${fmtN(inv.tax)}</td></tr>${num(inv.furtherTax)?`<tr><td>Further tax @ ${num(inv.furtherRate)}%</td><td class="n">${fmtN(inv.furtherTax)}</td></tr>`:""}<tr class="g"><td>Total (Rs)</td><td class="n">${fmtN(inv.total)}</td></tr></tbody></table>
+  <div class="words">Amount in words: ${rupeesWords(inv.total)}</div>
+  ${sc?`<div class="lbl">Instalment schedule</div><table><thead><tr><th>#</th><th>Due date</th><th class="n">Amount</th><th class="n">Paid</th><th>Status</th></tr></thead><tbody>${sc.rows.map(r=>`<tr><td>${r.n}</td><td>${fmtD(r.due)}</td><td class="n">${fmtN(r.amt)}</td><td class="n">${fmtN(r.got)}</td><td>${{paid:"Paid",overdue:"Overdue",part:"Part paid",due:"Due"}[r.status]}</td></tr>`).join("")}</tbody></table>`:""}
+  ${inv.notes?`<div class="muted">Notes: ${esc(inv.notes)}</div>`:""}
+  <div class="sign"><div>Customer signature</div><div>For ${esc(settings().name||"the seller")}</div></div>
+  <div class="foot">Printed ${fmtD(today())} · Bike Showroom Manager</div></div>`;}
+function receiptNo(p){return "RCP-"+(p.date||"").replace(/-/g,"").slice(2)+"-"+String(p.id).replace(/-/g,"").slice(0,5).toUpperCase();}
+function receiptDoc(pay){
+  const pa=party(pay.partyId)||{name:"(deleted contact)"},inv=S.invoices.find(i=>i.id===pay.invoiceId);
+  return `<div class="doc">${docHead("PAYMENT RECEIPT",receiptNo(pay),pay.date)}
+  <div class="two">${partyBox("Received from",pa.name,pa.type,pa,pa.cnic,pa.ntn)}<div class="box"><div class="lbl">Amount received</div><div class="big">Rs ${fmtN(pay.amount)}</div><div>${rupeesWords(pay.amount)}</div></div></div>
+  <table><tbody><tr><th>Payment method</th><td>${esc(pay.method||"")}</td></tr><tr><th>Reference / cheque no.</th><td>${esc(pay.ref||"—")}</td></tr>
+  <tr><th>Against invoice</th><td>${inv?`<span class="mono">${esc(inv.no)}</span> dated ${fmtD(inv.date)} · total Rs ${fmtN(inv.total)}`:"General / advance payment"}</td></tr>
+  ${inv?`<tr><th>Invoice: total received to date</th><td class="mono">Rs ${fmtN(paidFor(inv))}</td></tr><tr><th>Invoice: balance now</th><td class="mono">Rs ${fmtN(invBal(inv))}</td></tr>`:""}
+  <tr><th>Customer's total pending balance now</th><td class="mono">Rs ${fmtN(partyStats(pay.partyId).bal)}</td></tr></tbody></table>
+  <div class="sign"><div>Paid by</div><div>Received by, for ${esc(settings().name||"the seller")}</div></div>
+  <div class="foot">Printed ${fmtD(today())} · Bike Showroom Manager</div></div>`;}
+function statementDoc(pid){
+  const p=party(pid),s=partyStats(pid),ev=partyStatement(pid);
+  return `<div class="doc">${docHead("ACCOUNT STATEMENT","",today())}
+  <div class="two">${partyBox("Account of",p.name,p.type,p,p.cnic,p.ntn)}<div class="box"><div class="lbl">Summary</div>Bikes taken: ${s.bikes}<br>Billed: Rs ${fmtN(s.billed)}<br>Received: Rs ${fmtN(s.paid)}<br><b>Pending: Rs ${fmtN(s.bal)}</b></div></div>
+  <table><thead><tr><th>Date</th><th>Details</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Balance</th></tr></thead><tbody>${ev.map(e=>`<tr><td>${fmtD(e.date)}</td><td>${esc(e.d)}</td><td class="n">${e.dr?fmtN(e.dr):""}</td><td class="n">${e.cr?fmtN(e.cr):""}</td><td class="n">${fmtN(e.bal)}</td></tr>`).join("")}</tbody></table>
+  <div class="words">Balance due: ${rupeesWords(s.bal)}</div>
+  <div class="foot">Printed ${fmtD(today())} · Bike Showroom Manager</div></div>`;}
+function printDoc(html){
+  const pa=$("#printArea");pa.innerHTML=html;
+  const done=()=>{pa.innerHTML="";window.removeEventListener("afterprint",done);};
+  window.addEventListener("afterprint",done);
+  setTimeout(()=>{try{window.print();}catch(e){toast("Printing isn't available here. Use Download instead.");}},50);
+}
+function docFile(title,html){return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap"><style>${DOC_CSS} body{margin:0;padding:24px;background:#fff} .doc{max-width:820px;margin:auto} @media print{body{padding:0}}</style></head><body>${html}</body></html>`;}
+
+/* ---------- Stage 1: edit windows ---------- */
+function editBike(id){
+  const b=bike(id);if(!b)return;openInvId=null;openPartyId=null;editing={type:"bike",id};
+  const sold=b.status==="sold",inv=sold&&S.invoices.find(i=>i.id===b.invoiceId);
+  const lock=sold?"disabled":"";const costLock=sold&&!isOwner()?"disabled":"";
+  openModal(`<h2 id="mTitle">Edit bike</h2>${sold?`<span class="pill neutral">Sold${inv?" · "+esc(inv.no):""}</span>`:`<span class="pill ok">In stock</span>`}`,
+  `${sold?`<div class="alert info">${ic("info")}<div>This bike is on invoice <b>${esc(inv?inv.no:"")}</b>, so its model, colour, engine and chassis numbers are locked to match the invoice. ${isOwner()?"You can still correct the purchase cost and challan number.":"Only the owner can correct its cost."}</div></div>`:""}
+  <div class="form-grid">
+    <label class="f"><span>Model</span><input id="ebModel" value="${esc(b.model)}" ${lock}></label>
+    <label class="f"><span>Colour</span><input id="ebColour" value="${esc(b.colour)}" ${lock}></label>
+    <label class="f"><span>Engine no.</span><input id="ebEngine" value="${esc(b.engine)}" ${lock}></label>
+    <label class="f"><span>Chassis no.</span><input id="ebChassis" value="${esc(b.chassis)}" ${lock}></label>
+    <label class="f"><span>Date received</span><input id="ebDate" type="date" value="${esc(b.receivedDate||"")}" ${lock}></label>
+    <label class="f"><span>Factory invoice / challan no.</span><input id="ebChallan" value="${esc(b.challan)}" ${costLock}></label>
+    <label class="f"><span>Purchase cost (Rs)</span><input id="ebCost" type="number" min="0" step="1" value="${esc(b.cost)}" ${costLock}></label>
+  </div><p class="ferr" id="ebErr" hidden></p>`,
+  `<div></div><div><button class="btn" data-close="1">Cancel</button><button class="btn primary" data-act="saveBike" ${sold&&!isOwner()?"disabled":""}>Save changes</button></div>`);
+}
+function editParty(id){
+  const p=party(id);if(!p)return;openInvId=null;openPartyId=null;editing={type:"party",id};
+  const n=S.invoices.filter(i=>i.partyId===id).length;
+  openModal(`<h2 id="mTitle">Edit contact</h2>${typePill(p.type)}`,
+  `${n?`<div class="alert info">${ic("info")}<div>Changes apply to new invoices. The ${n} invoice${n===1?"":"s"} already issued keep the name, CNIC and NTN they were printed with.</div></div>`:""}
+  <div class="form-grid">
+    <label class="f"><span>Type</span><select id="epType"><option value="dealer" ${p.type==="dealer"?"selected":""}>Dealer / sub-dealer</option><option value="customer" ${p.type!=="dealer"?"selected":""}>Customer</option></select></label>
+    <label class="f"><span>Name</span><input id="epName" value="${esc(p.name)}"></label>
+    <label class="f"><span>Phone</span><input id="epPhone" value="${esc(p.phone)}" inputmode="tel"></label>
+    <label class="f"><span>CNIC</span><input id="epCnic" value="${esc(p.cnic)}"></label>
+    <label class="f"><span>NTN / STRN</span><input id="epNtn" value="${esc(p.ntn)}"></label>
+    <label class="f"><span>Address / city</span><input id="epAddr" value="${esc(p.address)}"></label>
+  </div><p class="ferr" id="epErr" hidden></p>`,
+  `<div></div><div><button class="btn" data-close="1">Cancel</button><button class="btn primary" data-act="saveEditParty">Save changes</button></div>`);
+}
+let editing=null;
+
+/* ---------- Stage 1: reports ---------- */
+function vReports(){
+  const d=ui.repDate,m=ui.repMonth;
+  const dInv=S.invoices.filter(i=>i.date===d),dPay=S.payments.filter(p=>p.date===d),dIn=S.bikes.filter(b=>b.receivedDate===d);
+  const g=grossOf(dInv);
+  const byMethod={};dPay.forEach(p=>{byMethod[p.method||"Other"]=(byMethod[p.method||"Other"]||0)+num(p.amount);});
+  const mInv=S.invoices.filter(i=>(i.date||"").startsWith(m)),mPay=S.payments.filter(p=>(p.date||"").startsWith(m));const mg=grossOf(mInv);
+  const days={};const add=(k)=>days[k]=days[k]||{inv:0,bikes:0,rev:0,tax:0,total:0,recv:0,cost:0,in:0};
+  mInv.forEach(i=>{const x=add(i.date);x.inv++;x.bikes+=(i.items||[]).length;x.rev+=num(i.subtotal);x.tax+=num(i.tax)+num(i.furtherTax);x.total+=num(i.total);x.cost+=invCost(i);});
+  mPay.forEach(p=>{add(p.date).recv+=num(p.amount);});
+  S.bikes.filter(b=>(b.receivedDate||"").startsWith(m)).forEach(b=>{add(b.receivedDate).in++;});
+  const dk=Object.keys(days).sort();
+  const margin=mg.rev?Math.round(mg.gp/mg.rev*1000)/10:0;
+  return `<div class="stack-lg">
+  <section class="panel">${secH("Daily summary","Everything recorded for one day.",`<button class="btn sm" data-act="printDaily">${ic("print")}Print</button>`)}
+    <div class="toolbar"><label class="f"><span>Day</span><input type="date" id="repDate" data-fresh="1" value="${esc(d)}"></label>
+      <button class="btn sm" data-act="repDay" data-delta="-1">Previous day</button><button class="btn sm" data-act="repDay" data-delta="0">Today</button><button class="btn sm" data-act="repDay" data-delta="1">Next day</button></div>
+    <div class="kpis">${kpi("Invoices",dInv.length,"sales")}${kpi("Bikes sold",sum(dInv,i=>(i.items||[]).length),"stock")}${kpi("Sales incl. tax",fmtN(sum(dInv,i=>i.total)),"sales",{unit:"Rs"})}${kpi("Money received",fmtN(sum(dPay,p=>p.amount)),"payments",{unit:"Rs",tone:"ok",sub:dPay.length+" payment"+(dPay.length===1?"":"s")})}${kpi("Bikes received",dIn.length,"stock")}${kpi("Gross profit",fmtN(g.gp),"reports",{unit:"Rs",tone:"acc",sub:"Before expenses"})}</div>
+    <div class="grid2">
+      <div class="stack"><h3>Money received by method</h3>${dPay.length?`<div class="tablebox flush"><table><tbody>${Object.entries(byMethod).map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${fmtN(v)}</td></tr>`).join("")}</tbody><tfoot><tr><td>Total</td><td class="n">${fmtN(sum(dPay,p=>p.amount))}</td></tr></tfoot></table></div>`:`<p class="sub">No money received on this day.</p>`}</div>
+      <div class="stack"><h3>Invoices</h3>${dInv.length?`<div class="tablebox flush"><table><tbody>${dInv.map(i=>`<tr class="click" data-inv="${i.id}" tabindex="0"><td class="mono strong">${esc(i.no)}</td><td>${esc(i.partyName)}</td><td class="n">${fmtN(i.total)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="sub">No invoices on this day.</p>`}</div>
+    </div>
+    ${g.noCost?`<div class="alert warn">${ic("alert")}<div>${g.noCost} bike${g.noCost===1?"":"s"} sold on this day ${g.noCost===1?"has":"have"} no purchase cost recorded, so gross profit is shown too high. Add the cost under Stock → Edit.</div></div>`:""}
+  </section>
+  <section class="panel">${secH("Monthly summary","Day-by-day totals for the month.",`<button class="btn sm" data-act="printMonthly">${ic("print")}Print</button>`)}
+    <div class="toolbar"><label class="f"><span>Month</span><input type="month" id="repMonth" data-fresh="1" value="${esc(m)}"></label></div>
+    <div class="kpis">${kpi("Sales before tax",fmtN(mg.rev),"sales",{unit:"Rs",sub:mInv.length+" invoices · "+sum(mInv,i=>(i.items||[]).length)+" bikes"})}${kpi("Cost of bikes sold",fmtN(mg.cost),"stock",{unit:"Rs"})}${kpi("Gross profit",fmtN(mg.gp),"reports",{unit:"Rs",tone:mg.gp<0?"bad":"acc",sub:mg.rev?margin+"% of sales before tax":"No sales"})}${kpi("Money received",fmtN(sum(mPay,p=>p.amount)),"payments",{unit:"Rs",tone:"ok"})}</div>
+    ${mg.noCost?`<div class="alert warn">${ic("alert")}<div>${mg.noCost} bike${mg.noCost===1?"":"s"} sold this month ${mg.noCost===1?"has":"have"} no purchase cost recorded, so gross profit is shown too high.</div></div>`:""}
+    ${dk.length?`<div class="tablebox"><table><thead><tr><th>Date</th><th class="n">Invoices</th><th class="n">Bikes sold</th><th class="n">Sales excl. tax</th><th class="n">Tax</th><th class="n">Sales incl. tax</th><th class="n">Cost of bikes</th><th class="n">Gross profit</th><th class="n">Received</th><th class="n">Bikes in</th></tr></thead><tbody>
+    ${dk.map(k=>{const x=days[k];return `<tr class="click" data-repday="${k}" tabindex="0"><td>${fmtD(k)}</td><td class="n">${x.inv}</td><td class="n">${x.bikes}</td><td class="n">${fmtN(x.rev)}</td><td class="n">${fmtN(x.tax)}</td><td class="n">${fmtN(x.total)}</td><td class="n">${fmtN(x.cost)}</td><td class="n">${fmtN(x.rev-x.cost)}</td><td class="n">${fmtN(x.recv)}</td><td class="n">${x.in}</td></tr>`;}).join("")}
+    </tbody><tfoot><tr><td>Total</td><td class="n">${mInv.length}</td><td class="n">${sum(dk,k=>days[k].bikes)}</td><td class="n">${fmtN(mg.rev)}</td><td class="n">${fmtN(sum(dk,k=>days[k].tax))}</td><td class="n">${fmtN(sum(dk,k=>days[k].total))}</td><td class="n">${fmtN(mg.cost)}</td><td class="n">${fmtN(mg.gp)}</td><td class="n">${fmtN(sum(mPay,p=>p.amount))}</td><td class="n">${sum(dk,k=>days[k].in)}</td></tr></tfoot></table></div>`:emptyBox("reports","Nothing recorded this month","Choose another month above.")}
+    <p class="note"><b>Gross profit</b> = sales before tax minus the purchase cost of the bikes sold. Sales tax is not income, so it's left out. Expenses (rent, salaries, bills) are not recorded in the app yet, so this is not your net profit.</p>
+  </section></div>`;
+}
+function reportDoc(kind){
+  if(kind==="daily"){const d=ui.repDate,dInv=S.invoices.filter(i=>i.date===d),dPay=S.payments.filter(p=>p.date===d),g=grossOf(dInv);
+    return `<div class="doc">${docHead("DAILY SUMMARY","",d)}
+    <table><tbody><tr><th>Invoices</th><td class="n">${dInv.length}</td><th>Bikes sold</th><td class="n">${sum(dInv,i=>(i.items||[]).length)}</td></tr><tr><th>Sales excl. tax</th><td class="n">${fmtN(g.rev)}</td><th>Sales incl. tax</th><td class="n">${fmtN(sum(dInv,i=>i.total))}</td></tr><tr><th>Money received</th><td class="n">${fmtN(sum(dPay,p=>p.amount))}</td><th>Gross profit (before expenses)</th><td class="n">${fmtN(g.gp)}</td></tr></tbody></table>
+    <div class="lbl">Invoices</div><table><thead><tr><th>Invoice</th><th>Sold to</th><th class="n">Bikes</th><th class="n">Total</th></tr></thead><tbody>${dInv.map(i=>`<tr><td class="mono">${esc(i.no)}</td><td>${esc(i.partyName)}</td><td class="n">${(i.items||[]).length}</td><td class="n">${fmtN(i.total)}</td></tr>`).join("")||`<tr><td colspan="4">None</td></tr>`}</tbody></table>
+    <div class="lbl">Payments</div><table><thead><tr><th>From</th><th>Method</th><th>Reference</th><th class="n">Amount</th></tr></thead><tbody>${dPay.map(p=>`<tr><td>${esc((party(p.partyId)||{}).name||"")}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td></tr>`).join("")||`<tr><td colspan="4">None</td></tr>`}</tbody></table>
+    <div class="foot">Printed ${fmtD(today())} · Bike Showroom Manager</div></div>`;}
+  const m=ui.repMonth,mInv=S.invoices.filter(i=>(i.date||"").startsWith(m)),mPay=S.payments.filter(p=>(p.date||"").startsWith(m)),mg=grossOf(mInv);
+  return `<div class="doc">${docHead("MONTHLY SUMMARY",new Date(m+"-01T00:00").toLocaleString("en-GB",{month:"long",year:"numeric"}),"")}
+  <table><tbody><tr><th>Sales before tax</th><td class="n">${fmtN(mg.rev)}</td></tr><tr><th>Cost of bikes sold</th><td class="n">${fmtN(mg.cost)}</td></tr><tr><th>Gross profit (before expenses)</th><td class="n">${fmtN(mg.gp)}</td></tr><tr><th>Sales tax and further tax</th><td class="n">${fmtN(sum(mInv,i=>num(i.tax)+num(i.furtherTax)))}</td></tr><tr><th>Money received</th><td class="n">${fmtN(sum(mPay,p=>p.amount))}</td></tr><tr><th>Invoices / bikes sold</th><td class="n">${mInv.length} / ${sum(mInv,i=>(i.items||[]).length)}</td></tr></tbody></table>
+  <div class="muted">Gross profit = sales before tax minus purchase cost of bikes sold. Expenses are not included.</div>
+  <div class="foot">Printed ${fmtD(today())} · Bike Showroom Manager</div></div>`;
+}
+
+/* ---------- Stage 1: global search ---------- */
+let palSel=0,palItems=[];
+function openSearch(){const r=$("#paletteRoot");r.innerHTML=`<div class="modal-bg pal-bg" data-palclose="1"><div class="pal" role="dialog" aria-modal="true" aria-label="Search"><label class="pal-in">${ic("search")}<input id="palQ" type="search" placeholder="Search bikes, chassis, invoices, customers, phone…" autocomplete="off" aria-controls="palList"><kbd>Esc</kbd></label><div id="palList" class="pal-list" role="listbox"></div></div></div>`;palSel=0;renderPal("");$("#palQ").focus();}
+function closeSearch(){$("#paletteRoot").innerHTML="";}
+function renderPal(q){
+  q=q.trim().toLowerCase();const out=[];
+  if(q){
+    S.bikes.filter(b=>[b.model,b.colour,b.engine,b.chassis,b.challan].join(" ").toLowerCase().includes(q)).slice(0,6).forEach(b=>out.push({g:"Bikes",t:`${b.model} ${b.colour}`.trim(),s:`E ${b.engine} · C ${b.chassis} · ${b.status==="sold"?"Sold":"In stock"}`,go:{bike:b.id}}));
+    S.invoices.filter(i=>[i.no,i.partyName,i.fbrNo,...(i.items||[]).map(x=>x.engine+" "+x.chassis)].join(" ").toLowerCase().includes(q)).slice(0,6).forEach(i=>out.push({g:"Invoices",t:`${i.no} · ${i.partyName}`,s:`${fmtD(i.date)} · Rs ${fmtN(i.total)} · balance Rs ${fmtN(invBal(i))}`,go:{inv:i.id}}));
+    S.parties.filter(p=>[p.name,p.phone,p.cnic,p.ntn,p.address].join(" ").toLowerCase().includes(q)).slice(0,6).forEach(p=>out.push({g:"Dealers & customers",t:p.name,s:`${p.type==="dealer"?"Dealer":"Customer"} · pending Rs ${fmtN(partyStats(p.id).bal)}${p.phone?" · "+p.phone:""}`,go:{party:p.id}}));
+  }
+  palItems=out;palSel=Math.min(palSel,Math.max(0,out.length-1));
+  let g="";$("#palList").innerHTML=q?(out.length?out.map((x,k)=>{const h=x.g!==g?`<div class="pal-g">${x.g}</div>`:"";g=x.g;return h+`<button type="button" class="pal-i" role="option" data-pal="${k}" aria-selected="${k===palSel}"><b>${esc(x.t)}</b><span>${esc(x.s)}</span></button>`;}).join(""):`<p class="pal-empty">Nothing found for “${esc(q)}”.</p>`):`<p class="pal-empty">Type a chassis or engine number, invoice number, name, phone or CNIC.</p>`;
+}
+function pickPal(k){const x=palItems[k];if(!x)return;closeSearch();
+  if(x.go.inv)showInvoice(x.go.inv);else if(x.go.party)showParty(x.go.party);
+  else if(x.go.bike){const b=bike(x.go.bike);ui.stockQ=b.chassis||b.engine||b.model;ui.stockFilter="all";go("stock");}}
+
 /* ---------- render ---------- */
-const NAV={overview:"overview",stock:"stock",sales:"sales",payments:"payments",parties:"parties",instal:"instal",fbr:"fbr",settings:"settings"};
+const NAV={overview:"overview",stock:"stock",sales:"sales",payments:"payments",parties:"parties",instal:"instal",reports:"reports",fbr:"fbr",settings:"settings"};
 const PAGE={
   overview:["Overview","Where your showroom stands today",()=>`<button class="btn primary" data-go="sales">${ic("plus")}<span class="lbl">New invoice</span></button>`],
   stock:["Stock","Bikes received from the factory, by engine and chassis number",()=>`<button class="btn primary" data-act="jump" data-target="rcvModel">${ic("plus")}<span class="lbl">Receive bikes</span></button>`],
@@ -699,6 +913,7 @@ const PAGE={
   payments:["Payments","Money received from dealers and customers",()=>`<button class="btn primary" data-act="jump" data-target="payParty">${ic("plus")}<span class="lbl">Record payment</span></button>`],
   parties:["Dealers & customers","Contacts, balances and statements",()=>`<button class="btn primary" data-act="jump" data-target="ptName">${ic("plus")}<span class="lbl">Add contact</span></button>`],
   instal:["Instalments","Monthly plans, due dates and overdue amounts",()=>""],
+  reports:["Reports","Daily and monthly summaries with gross profit",()=>""],
   fbr:["FBR / Tax","Monthly sales and sales tax summary",()=>""],
   settings:["Settings","Business details, team and backup",()=>""]
 };
@@ -717,7 +932,7 @@ function render(){
   const keep=captureForm();
   const v=$("#view");
   if(!ready){v.innerHTML=`<div class="loading"><span class="spin" aria-hidden="true"></span>Loading your records…</div>`;return;}
-  v.innerHTML=({overview:vOverview,stock:vStock,sales:vSales,payments:vPayments,parties:vParties,instal:vInstal,fbr:vFbr,settings:vSettings}[tab])();
+  v.innerHTML=({overview:vOverview,stock:vStock,sales:vSales,payments:vPayments,parties:vParties,instal:vInstal,reports:vReports,fbr:vFbr,settings:vSettings}[tab])();
   restoreForm(keep);
   if(tab==="sales")updateInvTotals();
   if(tab==="payments")fillPayInvoices();
@@ -777,6 +992,7 @@ function vOverview(){
     ${kpi("Total sales",fmtN(sales),"sales",{unit:"Rs",sub:S.invoices.length+" invoice"+(S.invoices.length===1?"":"s")})}
     ${kpi("Received",fmtN(recv),"payments",{unit:"Rs",tone:"ok",sub:S.payments.length+" payment"+(S.payments.length===1?"":"s")})}
     ${kpi("Pending",fmtN(pend),"alert",{unit:"Rs",tone:pend>0.01?"bad":"",sub:owing.length?owing.length+" owe"+(owing.length===1?"s":"")+" money":"Nobody owes money"})}
+    ${(()=>{const g=grossOf(mInv);return kpi("Gross profit · this month",fmtN(g.gp),"reports",{unit:"Rs",tone:g.gp<0?"bad":"acc",sub:"Sales before tax − bike cost; before expenses"});})()}
     ${kpi("Overdue instalments",overdue.length,"instal",{tone:overdue.length?"bad":"",sub:overdue.length?"Rs "+fmtN(odAmt)+" overdue":"All instalments on time"})}
   </div></section>
   <div class="grid2">
@@ -822,7 +1038,7 @@ function vStock(){
     ${list.length?`<div class="tablebox"><table><thead><tr><th>Received</th><th>Model</th><th>Colour</th><th>Engine no.</th><th>Chassis no.</th><th>Challan</th><th class="n">Cost (Rs)</th><th>Status</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
     ${list.map(b=>{const inv=b.invoiceId&&S.invoices.find(i=>i.id===b.invoiceId);return `<tr><td>${fmtD(b.receivedDate)}</td><td class="strong">${esc(b.model)}</td><td>${esc(b.colour)}</td><td class="mono">${esc(b.engine)}</td><td class="mono">${esc(b.chassis)}</td><td class="mono">${esc(b.challan)}</td><td class="n">${fmtN(b.cost)}</td>
       <td>${b.status==="sold"?`<span class="pill neutral">Sold${inv?" · "+esc(inv.partyName):""}</span>`:`<span class="pill ok">In stock</span>`}</td>
-      <td class="act">${b.status==="sold"?(inv?`<button class="btn sm" data-inv="${inv.id}">View invoice</button>`:""):(isOwner()?`<button class="btn sm ghost" data-act="askDelBike" data-id="${b.id}" aria-label="Remove ${esc(b.model)} ${esc(b.chassis)} from stock">${ic("trash")}</button>`:"")}</td></tr>`;}).join("")}
+      <td class="act">${b.status==="sold"&&inv?`<button class="btn sm" data-inv="${inv.id}">View invoice</button> `:""}<button class="btn sm ghost" data-act="editBike" data-id="${b.id}" aria-label="Edit ${esc(b.model)} ${esc(b.chassis)}">${ic("edit")}</button>${b.status!=="sold"&&isOwner()?`<button class="btn sm ghost" data-act="askDelBike" data-id="${b.id}" aria-label="Remove ${esc(b.model)} ${esc(b.chassis)} from stock">${ic("trash")}</button>`:""}</td></tr>`;}).join("")}
     </tbody><tfoot><tr><td colspan="6">${list.length} bike${list.length===1?"":"s"}</td><td class="n">${fmtN(sum(list,b=>b.cost))}</td><td colspan="2"></td></tr></tfoot></table></div>`
     :(S.bikes.length?emptyBox("search","No bikes match","Try a different search or filter."):emptyBox("stock","No bikes yet","Use the form above to add the bikes you received from the factory."))}
   </section></div>`;
@@ -837,7 +1053,7 @@ function vSales(){
   let list=[...S.invoices].sort((a,b)=>(b.date+b.no).localeCompare(a.date+a.no));
   if(ui.invStatus!=="all")list=list.filter(i=>statusKey(i)===ui.invStatus);
   if(q)list=list.filter(i=>[i.no,i.partyName,i.fbrNo,...(i.items||[]).map(x=>x.engine+" "+x.chassis)].join(" ").toLowerCase().includes(q));
-  const ready2=parties.length&&avail.length;
+  const ready2=parties.length&&avail.length;const lastP=lastPriceByModel();
   return `<div class="stack-lg">
   <section class="panel" id="invPanel">${secH("New invoice",`Next number <span class="mono">${esc(nextInvNo())}</span>`)}
     ${!parties.length?`<div class="alert info">${ic("info")}<div>Add a dealer or customer first. <button type="button" class="link" data-go="parties">Go to Dealers &amp; customers</button></div></div>`:""}
@@ -850,7 +1066,7 @@ function vSales(){
           <label class="f"><span>FBR invoice no. (if issued)</span><input id="invFbr" placeholder="From the FBR system"></label>
         </div></fieldset>
         <fieldset class="fs"><legend>Bikes on this invoice <span class="sub">${avail.length} in stock</span></legend>
-          ${avail.length?`<div class="picklist">${avail.map(b=>`<label class="pick"><input type="checkbox" id="pk_${b.id}" data-pick="${b.id}"><span><b>${esc(b.model)}</b> ${esc(b.colour)}<br><span class="mono">E ${esc(b.engine)} · C ${esc(b.chassis)}</span></span><input type="number" id="pp_${b.id}" data-price="${b.id}" min="0" step="1" inputmode="decimal" placeholder="Sale price" aria-label="Sale price for ${esc(b.model)} ${esc(b.chassis)}"></label>`).join("")}</div><p class="hint">Tick each bike and enter its sale price.</p>`:emptyBox("stock","No bikes in stock","Receive bikes under Stock first.")}
+          ${avail.length?`<div class="picklist">${avail.map(b=>`<label class="pick"><input type="checkbox" id="pk_${b.id}" data-pick="${b.id}"><span><b>${esc(b.model)}</b> ${esc(b.colour)}<br><span class="mono">E ${esc(b.engine)} · C ${esc(b.chassis)}</span>${lastP[b.model]?`<span class="last">Last sold at Rs ${fmtN(lastP[b.model])} before tax</span>`:""}</span><input type="number" id="pp_${b.id}" data-price="${b.id}" min="0" step="1" inputmode="decimal" placeholder="Sale price" aria-label="Sale price for ${esc(b.model)} ${esc(b.chassis)}"></label>`).join("")}</div><p class="hint">Tick each bike and enter its sale price. The last price for that model is filled in for you; change it if needed.</p>`:emptyBox("stock","No bikes in stock","Receive bikes under Stock first.")}
         </fieldset>
         <fieldset class="fs"><legend>Tax and payment</legend>
           <div class="form-grid">
@@ -921,7 +1137,7 @@ function vPayments(){
   <section class="panel">${secH("Payment history",S.payments.length?`${S.payments.length} payment${S.payments.length===1?"":"s"} · Rs ${fmtN(sum(S.payments,p=>p.amount))} received`:"")}
   ${S.payments.length?`<div class="toolbar">${searchBox("payQ","Search name, invoice no., reference…",ui.payQ)}</div>`:""}
   ${list.length?`<div class="tablebox"><table><thead><tr><th>Date</th><th>From</th><th>Invoice</th><th>Method</th><th>Reference</th><th class="n">Amount (Rs)</th><th><span class="sr">Actions</span></th></tr></thead><tbody>
-  ${list.map(p=>{const pa=party(p.partyId),inv=S.invoices.find(i=>i.id===p.invoiceId);return `<tr><td>${fmtD(p.date)}</td><td class="strong">${esc(pa?pa.name:"(deleted)")}</td><td class="mono">${inv?`<button class="link sm" data-inv="${inv.id}">${esc(inv.no)}</button>`:"—"}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td><td class="act">${isOwner()?`<button class="btn sm ghost" data-act="askDelPay" data-id="${p.id}" aria-label="Delete payment of Rs ${fmtN(p.amount)}">${ic("trash")}</button>`:""}</td></tr>`;}).join("")}
+  ${list.map(p=>{const pa=party(p.partyId),inv=S.invoices.find(i=>i.id===p.invoiceId);return `<tr><td>${fmtD(p.date)}</td><td class="strong">${esc(pa?pa.name:"(deleted)")}</td><td class="mono">${inv?`<button class="link sm" data-inv="${inv.id}">${esc(inv.no)}</button>`:"—"}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td><td class="act"><button class="btn sm ghost" data-act="printReceipt" data-id="${p.id}" aria-label="Print receipt for Rs ${fmtN(p.amount)}" title="Print receipt">${ic("receipt")}</button>${isOwner()?`<button class="btn sm ghost" data-act="askDelPay" data-id="${p.id}" aria-label="Delete payment of Rs ${fmtN(p.amount)}">${ic("trash")}</button>`:""}</td></tr>`;}).join("")}
   </tbody><tfoot><tr><td colspan="5">${list.length} payment${list.length===1?"":"s"}</td><td class="n">${fmtN(sum(list,p=>p.amount))}</td><td></td></tr></tfoot></table></div>`
   :(S.payments.length?emptyBox("search","No payments match","Try a different search."):emptyBox("payments","No payments recorded yet","Payments you record, including money received at sale, appear here."))}
   </section></div>`;
@@ -1065,9 +1281,9 @@ function showInvoice(id){
   const pays=S.payments.filter(p=>p.invoiceId===id).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
   openModal(`<h2 id="mTitle">Invoice <span class="mono">${esc(inv.no)}</span></h2>${statusPill(inv)}`,
   `<div class="paper">${invoiceHtml(inv)}</div>
-  <div class="stack"><h3>Payments on this invoice</h3>${pays.length?`<div class="tablebox flush"><table><thead><tr><th>Date</th><th>Method</th><th>Reference</th><th class="n">Amount (Rs)</th></tr></thead><tbody>${pays.map(p=>`<tr><td>${fmtD(p.date)}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td></tr>`).join("")}</tbody></table></div>`:`<p class="sub">No payments recorded yet.</p>`}</div>
+  <div class="stack"><h3>Payments on this invoice</h3>${pays.length?`<div class="tablebox flush"><table><thead><tr><th>Date</th><th>Method</th><th>Reference</th><th class="n">Amount (Rs)</th><th><span class="sr">Receipt</span></th></tr></thead><tbody>${pays.map(p=>`<tr><td>${fmtD(p.date)}</td><td>${esc(p.method)}</td><td>${esc(p.ref)}</td><td class="n">${fmtN(p.amount)}</td><td class="act"><button class="btn sm ghost" data-act="printReceipt" data-id="${p.id}" title="Print receipt" aria-label="Print receipt">${ic("receipt")}</button></td></tr>`).join("")}</tbody></table></div>`:`<p class="sub">No payments recorded yet.</p>`}</div>
   <div class="row"><label class="f" style="flex:1 1 240px"><span>FBR invoice no.</span><input id="mFbr" value="${esc(inv.fbrNo)}" placeholder="From the FBR system"></label><button class="btn" data-act="saveFbr">Save FBR no.</button></div>`,
-  `<div><button class="btn primary" data-act="dlInv">${ic("download")}Download invoice</button>${invBal(inv)>0.01?`<button class="btn" data-act="payThis">${ic("plus")}Record payment</button>`:""}</div>${isOwner()?`<button class="btn danger" data-act="askDelInv">${ic("trash")}Delete invoice</button>`:""}`);
+  `<div><button class="btn primary" data-act="printInv">${ic("print")}Print invoice</button><button class="btn" data-act="dlInv">${ic("download")}Download</button>${invBal(inv)>0.01?`<button class="btn" data-act="payThis">${ic("plus")}Record payment</button>`:""}</div>${isOwner()?`<button class="btn danger" data-act="askDelInv">${ic("trash")}Delete invoice</button>`:""}`);
 }
 function partyStatement(pid){
   const ev=[];S.invoices.filter(i=>i.partyId===pid).forEach(i=>ev.push({date:i.date,d:"Invoice "+i.no+" · "+(i.items||[]).length+" bike(s)",dr:num(i.total),cr:0,inv:i.id}));
@@ -1080,7 +1296,7 @@ function showParty(pid){
   `<p class="sub">${[p.phone&&esc(p.phone),p.cnic&&"CNIC "+esc(p.cnic),p.ntn&&"NTN "+esc(p.ntn),p.address&&esc(p.address)].filter(Boolean).join(" · ")||"No contact details saved"}</p>
   <div class="kpis compact">${kpi("Bikes taken",s.bikes,"stock")}${kpi("Billed",fmtN(s.billed),"sales",{unit:"Rs"})}${kpi("Received",fmtN(s.paid),"payments",{unit:"Rs",tone:"ok"})}${kpi("Pending",fmtN(s.bal),"alert",{unit:"Rs",tone:s.bal>0.01?"bad":""})}</div>
   <div class="stack"><h3>Statement</h3>${ev.length?`<div class="tablebox flush"><table><thead><tr><th>Date</th><th>Details</th><th class="n">Billed</th><th class="n">Received</th><th class="n">Balance (Rs)</th></tr></thead><tbody>${ev.map(e=>`<tr ${e.inv?`class="click" data-inv="${e.inv}" tabindex="0"`:""}><td>${fmtD(e.date)}</td><td>${esc(e.d)}</td><td class="n">${e.dr?fmtN(e.dr):""}</td><td class="n">${e.cr?fmtN(e.cr):""}</td><td class="n">${fmtN(e.bal)}</td></tr>`).join("")}</tbody></table></div>`:emptyBox("sales","No invoices or payments yet","")}</div>`,
-  `<div><button class="btn primary" data-act="dlStatement" ${ev.length?"":"disabled"}>${ic("download")}Download statement (CSV)</button></div>${isOwner()&&!s.inv.length?`<button class="btn danger" data-act="askDelParty">${ic("trash")}Delete contact</button>`:""}`);
+  `<div><button class="btn" data-act="editParty" data-id="${p.id}">${ic("edit")}Edit details</button><button class="btn primary" data-act="printStatement" ${ev.length?"":"disabled"}>${ic("print")}Print statement</button><button class="btn" data-act="dlStatement" ${ev.length?"":"disabled"}>${ic("download")}CSV</button></div>${isOwner()&&!s.inv.length?`<button class="btn danger" data-act="askDelParty">${ic("trash")}Delete contact</button>`:""}`);
 }
 function rerenderModal(){if(!$("#modalRoot").innerHTML)return;const bg=$("#modalRoot .modal-bg"),top=bg?bg.scrollTop:0,ae=document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#modalRoot");const k=captureModal();if(openInvId)showInvoice(openInvId);else if(openPartyId)showParty(openPartyId);restoreModal(k);const nb=$("#modalRoot .modal-bg");if(nb)nb.scrollTop=top;if(!ae&&document.activeElement&&document.activeElement.closest&&document.activeElement.closest("#modalRoot"))document.activeElement.blur();}
 function captureModal(){const f=$("#mFbr");return f?{fbr:f.value,focus:document.activeElement===f}:null;}
@@ -1095,7 +1311,8 @@ async function sendInviteEmail(email){
   toast("Invitation email sent to "+email+". They'll get access when they open the link.");return true;}
 const ownerOnly=()=>{if(isOwner())return true;toast("Only the owner can do this.");return false;};
 const A={
-  async receive(){
+  async receive(){return once("receive",()=>A._receive());},
+  async _receive(){
     const lines=$("#rcvLines").value.split(/\n/).map(l=>l.trim()).filter(Boolean);
     const model=$("#rcvModel").value.trim();
     if(!model){toast("Enter the model");return;} if(!lines.length){toast("Enter at least one engine/chassis line");return;}
@@ -1107,7 +1324,8 @@ const A={
     const ok=await guard(()=>q(sb.from("bikes").insert(bikes.map(b=>toRow(Object.assign({},base,b))))));
     if(ok){$("#rcvLines").value="";$("#rcvCount").textContent="";toast(bikes.length+" bike(s) added to stock");}
   },
-  async saveInv(){
+  async saveInv(){return once("saveInv",()=>A._saveInv());},
+  async _saveInv(){
     const pid=$("#invParty").value,p=party(pid);if(!p){toast("Choose who the bikes are sold to");return;}
     const x=readInvForm();if(!x.items.length){toast("Tick at least one bike");return;}
     if(x.items.some(i=>!i.price)){toast("Enter a sale price for every ticked bike");return;}
@@ -1118,7 +1336,8 @@ const A={
     const ok=await guard(async()=>{made=await q(sb.rpc("create_invoice",{p:toRow(inv),pay:recv>0?{amount:recv,method:$("#invMethod").value,ref:"At sale"}:null}));});
     if(ok&&made){["invRecv","invNotes","invFbr","invDown"].forEach(k=>{const e=document.getElementById(k);if(e)e.value="";});const pl=$("#invPlan");if(pl){pl.value="full";updateInvTotals();}toast("Invoice "+made.no+" saved");showInvoice(made.id);}
   },
-  async savePay(){
+  async savePay(){return once("savePay",()=>A._savePay());},
+  async _savePay(){
     const pid=$("#payParty").value;if(!party(pid)){toast("Choose who paid");return;}
     const amt=num($("#payAmt").value);if(amt<=0){toast("Enter the amount received");return;}
     const invId=$("#payInv").value;const date=$("#payDate").value||today(),method=$("#payMethod").value,ref=$("#payRef").value.trim();
@@ -1140,9 +1359,27 @@ const A={
   },
   async saveFbr(){const v=$("#mFbr").value.trim();if(await guard(()=>q(sb.from("invoices").update({fbr_no:v}).eq("id",openInvId))))toast("FBR number saved");},
   dlInv(){const inv=S.invoices.find(i=>i.id===openInvId);if(!inv)return;
-    const style=document.querySelector("style").textContent;
-    const html=`<!doctype html><html><head><meta charset="utf-8"><title>${esc(inv.no)}</title><style>${style} body{padding:24px;max-width:860px;margin:auto} .modal{border:0}</style></head><body><div class="modal">${invoiceHtml(inv,true)}<p class="sub">Press Ctrl+P to print or save as PDF.</p></div></body></html>`;
-    save(`${inv.no} ${inv.partyName}.html`.replace(/[\\/:*?"<>|]/g,"-"),html);},
+    save(`${inv.no} ${inv.partyName}.html`.replace(/[\\/:*?"<>|]/g,"-"),docFile(inv.no,invoiceDoc(inv)));},
+  printInv(){const inv=S.invoices.find(i=>i.id===openInvId);if(inv)printDoc(invoiceDoc(inv));},
+  printReceipt(el){const p=S.payments.find(x=>x.id===el.dataset.id);if(p)printDoc(receiptDoc(p));},
+  printStatement(){if(party(openPartyId))printDoc(statementDoc(openPartyId));},
+  printDaily(){printDoc(reportDoc("daily"));},
+  printMonthly(){printDoc(reportDoc("monthly"));},
+  repDay(el){const d=+el.dataset.delta;if(!d)ui.repDate=today();else{const t=new Date(ui.repDate+"T12:00");t.setDate(t.getDate()+d);ui.repDate=t.getFullYear()+"-"+String(t.getMonth()+1).padStart(2,"0")+"-"+String(t.getDate()).padStart(2,"0");}render();},
+  openSearch(){openSearch();},
+  editBike(el){editBike(el.dataset.id);},
+  editParty(el){editParty(el.dataset.id);},
+  async saveBike(){const id=editing&&editing.id,b=bike(id);if(!b)return;const er=$("#ebErr");er.hidden=true;
+    const sold=b.status==="sold";const d={challan:$("#ebChallan").value.trim(),cost:num($("#ebCost").value)};
+    if(num($("#ebCost").value)<0){er.textContent="Cost can't be negative.";er.hidden=false;return;}
+    if(!sold){Object.assign(d,{model:$("#ebModel").value.trim(),colour:$("#ebColour").value.trim(),engine:$("#ebEngine").value.trim(),chassis:$("#ebChassis").value.trim(),received_date:$("#ebDate").value||null});
+      if(!d.model){er.textContent="Enter the model.";er.hidden=false;return;}
+      const ch=d.chassis.toUpperCase();if(ch&&S.bikes.some(x=>x.id!==id&&(x.chassis||"").toUpperCase()===ch)){er.textContent="Another bike already has chassis number "+d.chassis+".";er.hidden=false;return;}}
+    if(await guard(()=>q(sb.from("bikes").update(d).eq("id",id)))){closeModal();editing=null;toast("Bike updated");}},
+  async saveEditParty(){const id=editing&&editing.id;if(!party(id))return;const er=$("#epErr");er.hidden=true;
+    const d={type:$("#epType").value,name:$("#epName").value.trim(),phone:$("#epPhone").value.trim(),cnic:$("#epCnic").value.trim(),ntn:$("#epNtn").value.trim(),address:$("#epAddr").value.trim()};
+    if(!d.name){er.textContent="Enter a name.";er.hidden=false;return;}
+    if(await guard(()=>q(sb.from("parties").update(d).eq("id",id)))){editing=null;showParty(id);toast("Contact updated");}},
   payThis(){const inv=S.invoices.find(i=>i.id===openInvId);if(!inv)return;closeModal();go("payments");$("#payParty").value=inv.partyId;fillPayInvoices();$("#payInv").value=inv.id;$("#payAmt").value=Math.max(0,invBal(inv));$("#payAmt").focus();},
   async askDelInv(){if(!ownerOnly())return;const inv=S.invoices.find(i=>i.id===openInvId);if(!inv)return;if(await confirmBox({title:"Delete invoice "+inv.no+"?",text:"Its "+(inv.items||[]).length+" bike(s) go back into stock and the payments recorded on it are deleted. This can't be undone.",ok:"Delete invoice"}))await A.delInv();},
   cancelModal(){rerenderModal();},
@@ -1203,7 +1440,10 @@ document.addEventListener("click",e=>{
   const pf=t.closest("[data-pf]");if(pf){ui.partyFilter=pf.dataset.pf;render();return;}
   const tb=t.closest("[data-tab]");if(tb){go(tb.dataset.tab);return;}
   const g=t.closest("[data-go]");if(g){closeModal();openInvId=openPartyId=null;go(g.dataset.go);return;}
-  const cl=t.closest("[data-close]");if(cl&&(cl===t||cl.tagName==="BUTTON")){closeModal();openInvId=openPartyId=null;return;}
+  const pc=t.closest("[data-pal]");if(pc){pickPal(+pc.dataset.pal);return;}
+  if(t.matches("[data-palclose]")){closeSearch();return;}
+  const rd=t.closest("[data-repday]");if(rd){ui.repDate=rd.dataset.repday;render();window.scrollTo(0,0);return;}
+  const cl=t.closest("[data-close]");if(cl&&(cl===t||cl.tagName==="BUTTON")){closeModal();openInvId=openPartyId=null;editing=null;return;}
   const a=t.closest("[data-act]");if(a){e.preventDefault();if(a.disabled)return;const fn=A[a.dataset.act];if(!fn)return;const r=fn(a);
     if(r&&typeof r.then==="function"&&a.tagName==="BUTTON"&&!/^ask|Nav$|jump/.test(a.dataset.act)){a.disabled=true;a.classList.add("busy");r.finally(()=>{if(a.isConnected){a.disabled=false;a.classList.remove("busy");}});}
     return;}
@@ -1211,11 +1451,16 @@ document.addEventListener("click",e=>{
   const pt=t.closest("[data-party]");if(pt){showParty(pt.dataset.party);return;}
 });
 document.addEventListener("keydown",e=>{
-  if(e.key==="Escape"){if($("#modalRoot").innerHTML){closeModal();openInvId=openPartyId=null;return;}if($("#side").classList.contains("open")){A.closeNav();return;}}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="k"&&!$("#app").hidden){e.preventDefault();openSearch();return;}
+  if($("#paletteRoot").innerHTML){if(e.key==="Escape"){closeSearch();return;}
+    if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();palSel=Math.max(0,Math.min(palItems.length-1,palSel+(e.key==="ArrowDown"?1:-1)));renderPal($("#palQ").value);const el=$(`[data-pal="${palSel}"]`);if(el)el.scrollIntoView({block:"nearest"});return;}
+    if(e.key==="Enter"&&e.target.id==="palQ"){e.preventDefault();pickPal(palSel);return;}}
+  if(e.key==="Escape"){if($("#modalRoot").innerHTML){closeModal();openInvId=openPartyId=null;editing=null;return;}if($("#side").classList.contains("open")){A.closeNav();return;}}
   if((e.key==="Enter"||e.key===" ")&&e.target.matches&&e.target.matches("tr[tabindex]")){e.preventDefault();e.target.click();}
 });
 document.addEventListener("input",e=>{
   const id=e.target.id;
+  if(id==="palQ"){palSel=0;renderPal(e.target.value);return;}
   if(SEARCH_KEYS[id]){ui[SEARCH_KEYS[id]]=e.target.value;const pos=e.target.selectionStart;render();const s=document.getElementById(id);if(s){s.focus();try{s.setSelectionRange(pos,pos);}catch(_){}}return;}
   if(tab==="sales"){if(e.target.dataset.price){const c=document.getElementById("pk_"+e.target.dataset.price);if(c&&e.target.value)c.checked=true;}updateInvTotals();}
   if(id==="rcvLines"){const n=e.target.value.split(/\n/).filter(l=>l.trim()).length;$("#rcvCount").textContent=n?n+" bike"+(n===1?"":"s")+" ready to add":"";}
@@ -1224,6 +1469,10 @@ document.addEventListener("input",e=>{
 document.addEventListener("change",e=>{
   const id=e.target.id;
   if(id==="invStatus"){ui.invStatus=e.target.value;render();}
+  if(id==="repDate"){ui.repDate=e.target.value||today();render();}
+  if(id==="repMonth"){ui.repMonth=e.target.value||today().slice(0,7);render();}
+  if(e.target.dataset&&e.target.dataset.pick&&e.target.checked){const b=bike(e.target.dataset.pick),pr=document.getElementById("pp_"+e.target.dataset.pick);const last=b&&lastPriceByModel()[b.model];
+    if(pr&&!pr.value&&last){const incl=$("#invIncl").value==="incl",rate=(num($("#invTax").value)+num($("#invFurther").value))/100;pr.value=Math.round(incl?last*(1+rate):last);}}
   if(id==="fbrMonth"){ui.fbrMonth=e.target.value||today().slice(0,7);render();}
   if(id==="payParty")fillPayInvoices();
   if(id==="shopSwitch"){const m=shops.find(s=>s.showroom_id===e.target.value);if(m){A.closeNav();openShop(m);}}
