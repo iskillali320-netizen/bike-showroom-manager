@@ -25,6 +25,11 @@ Online software for motorcycle showrooms: stock received from the factory, bikes
 2. Sign in → enter the showroom name → the first account becomes the **Owner**.
 3. Settings → fill business name, NTN, STRN, tax rate. Add staff under **Team**.
 
+## Using the app
+- **Sign-in screens:** sign in, create account (with email confirmation), forgot password and set a new password. Errors are shown next to the field that needs fixing.
+- **Sections (left menu, or the menu button on phones):** Overview, Stock, Sales & invoices, Payments, Dealers & customers, Instalments, FBR / Tax, Settings.
+- Deleting a bike, payment, invoice, contact or team member always asks for confirmation, and only the owner can do it.
+
 ## Adding a new showroom (customer)
 Each customer opens the same website, creates an account and creates their own showroom. Their data is separate from everyone else's.
 
